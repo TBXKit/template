@@ -13,9 +13,9 @@ export function PackageCard({
   return (
     <Link
       href={`/package/${pkg.id}`}
-      className="group flex flex-col overflow-hidden rounded-lg border border-black/10 dark:border-white/10"
+      className="group flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary"
     >
-      <div className="relative aspect-square w-full bg-zinc-100 dark:bg-zinc-900">
+      <div className="relative aspect-square w-full bg-muted">
         {pkg.image ? (
           <Image
             src={pkg.image}
@@ -28,13 +28,11 @@ export function PackageCard({
         ) : null}
       </div>
       <div className="flex flex-1 flex-col gap-1 p-4">
-        <h3 className="text-sm font-medium text-zinc-950 dark:text-zinc-50">
-          {pkg.name}
-        </h3>
+        <h3 className="text-sm font-medium text-card-foreground">{pkg.name}</h3>
         <PackagePrice
           amount={pkg.total_price}
           currency={currency}
-          className="text-sm text-zinc-600 dark:text-zinc-400"
+          className="text-sm font-medium text-primary"
         />
       </div>
     </Link>

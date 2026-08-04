@@ -17,12 +17,9 @@ export function Header({
   ];
 
   return (
-    <header className="relative border-b border-black/10 dark:border-white/10">
+    <header className="relative border-b border-border">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link
-          href="/"
-          className="text-lg font-semibold text-zinc-950 dark:text-zinc-50"
-        >
+        <Link href="/" className="text-lg font-semibold text-foreground">
           {siteName}
         </Link>
 
@@ -31,7 +28,7 @@ export function Header({
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+              className="text-sm text-muted-foreground hover:text-foreground"
             >
               {link.label}
             </Link>
@@ -39,15 +36,15 @@ export function Header({
         </nav>
 
         <details className="md:hidden">
-          <summary className="cursor-pointer list-none text-sm text-zinc-600 dark:text-zinc-400">
+          <summary className="cursor-pointer list-none text-sm text-muted-foreground">
             Menu
           </summary>
-          <nav className="absolute inset-x-0 top-full flex flex-col gap-3 border-b border-black/10 bg-white px-6 py-4 dark:border-white/10 dark:bg-zinc-950">
+          <nav className="absolute inset-x-0 top-full flex flex-col gap-3 border-b border-border bg-card px-6 py-4">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm text-zinc-600 dark:text-zinc-400"
+                className="text-sm text-muted-foreground hover:text-foreground"
               >
                 {link.label}
               </Link>

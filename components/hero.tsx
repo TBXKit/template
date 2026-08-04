@@ -6,12 +6,12 @@ export function Hero({
   subtitle?: string;
 }) {
   return (
-    <section className="border-b border-black/10 bg-zinc-50 px-6 py-24 text-center dark:border-white/10 dark:bg-zinc-950">
-      <h1 className="text-4xl font-semibold tracking-tight text-zinc-950 sm:text-5xl dark:text-zinc-50">
+    <section className="border-b border-border bg-muted px-6 py-section text-center">
+      <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
         {title}
       </h1>
       {subtitle ? (
-        <p className="mx-auto mt-4 max-w-xl text-lg text-zinc-600 dark:text-zinc-400">
+        <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
           {subtitle}
         </p>
       ) : null}

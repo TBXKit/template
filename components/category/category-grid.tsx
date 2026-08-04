@@ -3,11 +3,7 @@ import { CategoryCard } from "./category-card";
 
 export function CategoryGrid({ categories }: { categories: Category[] }) {
   if (categories.length === 0) {
-    return (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
-        No categories yet.
-      </p>
-    );
+    return <p className="text-sm text-muted-foreground">No categories yet.</p>;
   }
 
   return (

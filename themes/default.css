@@ -1,0 +1,50 @@
+/*
+ * Theme tokens for the storefront.
+ *
+ * To reskin the store, copy this file (e.g. themes/ocean.css), edit the
+ * values below, and point the `@import` in app/globals.css at your copy.
+ * Nothing else in the app needs to change — every component reads these
+ * variables through Tailwind utilities like `bg-primary` or `text-foreground`.
+ */
+
+:root {
+  /* Page */
+  --background: #ffffff;
+  --foreground: #171717;
+
+  /* Cards / raised surfaces (category cards, package cards) */
+  --card: #ffffff;
+  --card-foreground: #171717;
+
+  /* Brand / accent color — links, hover states, price emphasis */
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+
+  /* Secondary text, subtle backgrounds, dividers */
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --border: #e4e4e7;
+
+  /* Shape */
+  --radius: 0.5rem;
+
+  /* Layout rhythm */
+  --section-spacing: 6rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+
+    --card: #18181b;
+    --card-foreground: #ededed;
+
+    --primary: #3b82f6;
+    --primary-foreground: #0a0a0a;
+
+    --muted: #18181b;
+    --muted-foreground: #a1a1aa;
+    --border: #27272a;
+  }
+}

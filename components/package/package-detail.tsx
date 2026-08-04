@@ -11,7 +11,7 @@ export function PackageDetail({
 }) {
   return (
     <div className="grid gap-8 md:grid-cols-2">
-      <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-900">
+      <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-muted">
         {pkg.image ? (
           <Image
             src={pkg.image}
@@ -24,16 +24,14 @@ export function PackageDetail({
         ) : null}
       </div>
       <div>
-        <h1 className="text-3xl font-semibold text-zinc-950 dark:text-zinc-50">
-          {pkg.name}
-        </h1>
+        <h1 className="text-3xl font-semibold text-foreground">{pkg.name}</h1>
         <PackagePrice
           amount={pkg.total_price}
           currency={currency}
-          className="mt-2 block text-xl text-zinc-600 dark:text-zinc-400"
+          className="mt-2 block text-xl font-medium text-primary"
         />
         {pkg.description ? (
-          <p className="mt-6 whitespace-pre-line text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+          <p className="mt-6 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
             {pkg.description}
           </p>
         ) : null}

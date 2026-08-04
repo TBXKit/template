@@ -20,6 +20,18 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Theming
+
+Visual appearance is driven entirely by CSS variables in [`themes/default.css`](themes/default.css) — colors, card styling, border radius, and section spacing. `app/globals.css` maps those variables into Tailwind v4 utilities (`bg-primary`, `text-foreground`, `bg-card`, `border-border`, `rounded-lg`, `py-section`, ...), and components use those utilities instead of hardcoded colors.
+
+To reskin the store:
+
+1. Copy `themes/default.css` (e.g. `themes/ocean.css`).
+2. Edit the variable values — light mode values in `:root`, dark mode values in the `@media (prefers-color-scheme: dark)` block.
+3. Point the `@import` at the top of `app/globals.css` at your copy.
+
+No component changes are needed to change the look of the store.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
