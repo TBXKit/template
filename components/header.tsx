@@ -37,7 +37,7 @@ export function Header({
           {webstore.name}
         </Link>
 
-        <nav className="hidden gap-6 md:flex">
+        <nav aria-label="Primary" className="hidden gap-6 md:flex">
           {links.map((link) => (
             <Link
               key={link.href}
@@ -53,7 +53,10 @@ export function Header({
           <summary className="cursor-pointer list-none text-sm text-muted-foreground">
             Menu
           </summary>
-          <nav className="absolute inset-x-0 top-full flex flex-col gap-3 border-b border-border bg-card px-6 py-4">
+          <nav
+            aria-label="Primary"
+            className="absolute inset-x-0 top-full flex flex-col gap-3 border-b border-border bg-card px-6 py-4"
+          >
             {links.map((link) => (
               <Link
                 key={link.href}
