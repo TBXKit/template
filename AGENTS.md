@@ -7,3 +7,60 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+# Project Overview
+
+This repository is a customizable **Tebex storefront theme**: a Next.js template that renders a game/community store (categories → packages → package detail) backed by the [Tebex Headless API](https://docs.tebex.io/developers/headless-api/overview). It's meant to be forked or copied by store owners and reskinned — the goal is a clean, minimal starting point, not a feature-complete e-commerce app. There is currently no basket/checkout flow; the app is browse-only (list packages, view package detail). Any basket/checkout work would be new functionality, not a gap in an existing pattern.
+
+# Architecture
+
+- **Next.js 16 App Router**, React 19. Routes live under `app/` using the file-based convention (`page.tsx`, `layout.tsx`, `error.tsx`, `global-error.tsx`, `not-found.tsx`).
+- **Server Components by default.** Every route (`app/page.tsx`, `app/layout.tsx`, `app/category/[id]/page.tsx`, `app/package/[id]/page.tsx`) is an `async` Server Component that fetches its own data directly — no client-side data fetching, no route handlers/API routes exist or are needed.
+- **`"use client"` only where React requires it.** In this codebase that's exactly `app/error.tsx` and `app/global-error.tsx`, because Next.js error boundaries must be Client Components. There is no other client-side interactivity (no `useState`, no event-driven UI) — don't add `"use client"` to a component just to be safe.
+- **Pages own data fetching; components are presentational.** Pages/layout call into `lib/tebex` and pass plain data down as props (e.g. `app/page.tsx` fetches `webstore`/`categories` and passes them to `<Hero>` and `<CategoryGrid>`). Components under `components/` never call `fetch` or import from `lib/tebex`'s functions — they only import types from `lib/tebex/types` and render what they're given.
+- **Typed routes.** Route params and layout props use Next 16's generated helpers (`PageProps<"/category/[id]">`, `LayoutProps<"/">`) instead of hand-written prop types — follow this pattern for any new route.
+- `generateMetadata` is used per-route for `<title>`/`<meta description>` (and once in `layout.tsx` for the sitewide title template and Open Graph defaults), sourced from the same Tebex data the page itself fetches.
+
+# Project Structure
+
+- `app/` — routes only (pages, layout, error/not-found boundaries, global CSS entry). No business logic lives here beyond composing `lib/tebex` calls and passing props to components.
+- `components/` — presentational, prop-driven UI. See "Component Organization" below for how it's subdivided.
+- `lib/tebex/` — the sole Tebex data-access layer (`index.ts` for fetch functions, `types.ts` for the domain types). See "Tebex Integration".
+- `themes/` — CSS files defining design tokens (colors, radius, spacing) as custom properties. `default.css` is the shipped theme; alternate themes are sibling files swapped via one `@import` in `app/globals.css`.
+
+Don't introduce a `hooks/`, `services/`, `utils/`, or similar generic top-level folder unless there's already code that needs it — the current structure has stayed flat on purpose.
+
+# Component Organization
+
+- Components are grouped by **domain**, not by type: `components/category/` (`category-card.tsx`, `category-grid.tsx`) and `components/package/` (`package-card.tsx`, `package-detail.tsx`, `package-price.tsx`) each exist because that domain has multiple related components worth grouping.
+- Components with no siblings stay as flat files at the top of `components/` — `header.tsx` and `footer.tsx` are not nested in `components/header/` or `components/layout/` because each is a single file. Don't create a folder for a component until a second, related component justifies it.
+- Every component takes its data as props (e.g. `PackageCard({ pkg, currency })`); none of them fetch, none of them reach into global state. `PackagePrice` is the one small extraction that exists purely because currency formatting (`Intl.NumberFormat`) is repeated between `PackageCard` and `PackageDetail` — that's the bar for pulling something into its own component: real, demonstrated duplication, not anticipated reuse.
+
+# Styling
+
+- **Tailwind v4**, CSS-first config — there is no `tailwind.config.ts`. `app/globals.css` does `@import "tailwindcss"` followed by `@import "../themes/default.css"`, then an `@theme inline` block that maps theme CSS variables (`--background`, `--primary`, `--radius`, `--section-spacing`, …) onto Tailwind utility names (`bg-background`, `text-primary`, `rounded-lg`, `py-section`).
+- **Theme values live in `themes/*.css`** as plain CSS custom properties, with light values in `:root` and dark values in an `@media (prefers-color-scheme: dark)` block. Reskinning the store means copying `themes/default.css`, editing the variable values, and repointing the `@import` in `app/globals.css` — no component changes required. This is documented in `README.md`; keep that doc in sync if the token set changes.
+- **Use theme utilities, not hardcoded values**, so themes stay swappable: `text-foreground` / `text-muted-foreground` / `bg-card` / `border-border` / `text-primary`, not raw Tailwind color scales like `text-zinc-950`.
+
+# Tebex Integration
+
+- `lib/tebex/index.ts` is the application's only interface to the Tebex Headless API. It reads `TEBEX_PUBLIC_TOKEN` from the environment, builds `https://headless.tebex.io/api/accounts/{token}/...` URLs, and exposes four functions: `getWebstore`, `getCategories`, `getCategory(id)`, `getPackage(id)`. Requests are cached via `next: { revalidate: 300 }`.
+- **Only pages and the root layout call these functions.** Components receive already-fetched data as props; they don't know the Tebex API exists. If a new component needs Tebex data, fetch it in the owning page/layout and pass it down — don't reach into `lib/tebex` from inside `components/`.
+- Tebex's API is inconsistent about "not found" status codes per endpoint (a bad category ID returns 422, a bad package ID returns 400, not 404). `getCategory`/`getPackage` account for this explicitly via the `notFoundStatuses` parameter to `tebexFetch`, returning `null` so pages can call `notFound()`. Follow this pattern (explicit expected-status allowlist, not blanket `try/catch`) for any new Tebex endpoint.
+- `lib/tebex/types.ts` defines the domain shape (`Webstore`, `Category`, `Package`, `BaseItem`, `PackageType`). These types — not raw Tebex API responses — are what flows through props into components.
+- There is no basket, checkout, or auth integration yet; `PackageType` (`"subscription" | "single"`) is modeled but not currently used to change rendering anywhere. Don't build speculative basket/cart plumbing unless asked — it doesn't exist today.
+
+# Development Philosophy
+
+- **Prefer the simple, direct solution.** Pages call `lib/tebex` functions directly and pass the results straight through as props — no repositories, no data-fetching hooks, no client-side cache layer. Don't add one of these unless a concrete requirement (e.g. client-side interactivity that needs revalidation) demands it.
+- **Don't abstract before duplication actually hurts.** `PackagePrice` exists because two components needed identical formatting logic — that's the bar. Two or three similar-but-not-identical blocks of JSX across pages is fine; a shared component isn't automatically better than duplication if it adds coupling for cosmetic similarity.
+- **No UI/component libraries.** Styling is hand-written Tailwind utilities against theme tokens; there's no shadcn/Radix/MUI dependency to reach for. Keep it that way unless the user asks to add one.
+- **Folders are earned, not default.** A domain gets a `components/<domain>/` folder once it has more than one component; a single component stays a flat file. Don't pre-create empty structure for anticipated future components.
+- **Keep business/data logic out of `components/`.** If you find yourself wanting `fetch`, env vars, or Tebex-specific branching inside a component, that logic belongs in the page or in `lib/tebex` instead.
+
+# Repository-Specific Guidance
+
+- Biome (`biome.json`) is the linter/formatter — run `npm run lint` (`biome check`) and `npm run format` (`biome format --write`). There is no separate ESLint/Prettier config to reconcile with.
+- There is no test runner configured in this repo (no Jest/Vitest, no test files). Don't assume a `npm test` script exists.
+- `TEBEX_PUBLIC_TOKEN` (see `.env.example`) is required for any local run — every route fetches from Tebex at request/build time and will throw if it's unset.
+- Every route delegates its presentational markup to a component (`CategoryGrid`/`CategoryDetail`, `PackageDetail`) rather than inlining JSX in `page.tsx` — the page's job is fetching data, resolving 404s, and composing components inside the shared `mx-auto max-w-6xl px-6 py-16` wrapper. Follow this for new routes rather than writing markup directly in the page.
