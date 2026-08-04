@@ -19,8 +19,17 @@ export async function generateMetadata(): Promise<Metadata> {
   const webstore = await getWebstore();
 
   return {
-    title: webstore.name,
+    title: {
+      default: webstore.name,
+      template: `%s | ${webstore.name}`,
+    },
     description: webstore.description || undefined,
+    icons: webstore.logo ? { icon: webstore.logo } : undefined,
+    openGraph: {
+      siteName: webstore.name,
+      title: webstore.name,
+      description: webstore.description || undefined,
+    },
   };
 }
 
@@ -36,7 +45,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col font-sans">
-        <Header siteName={webstore.name} categories={categories} />
+        <Header webstore={webstore} categories={categories} />
         <main className="flex-1">{children}</main>
         <Footer siteName={webstore.name} />
       </body>

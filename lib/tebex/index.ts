@@ -12,13 +12,16 @@ function accountPath(path: string) {
   return `${API_BASE}/accounts/${token}${path}`;
 }
 
-async function tebexFetch<T>(path: string): Promise<T | null> {
+async function tebexFetch<T>(
+  path: string,
+  notFoundStatuses: number[] = [404],
+): Promise<T | null> {
   const res = await fetch(accountPath(path), {
     headers: { "Content-Type": "application/json" },
     next: { revalidate: 300 },
   });
 
-  if (res.status === 404) {
+  if (notFoundStatuses.includes(res.status)) {
     return null;
   }
 
@@ -47,10 +50,15 @@ export async function getCategories(): Promise<Category[]> {
   return categories ?? [];
 }
 
+// Tebex returns 422 (not 404) for a category ID that doesn't exist.
 export function getCategory(id: number): Promise<Category | null> {
-  return tebexFetch<Category>(`/categories/${id}?includePackages=1`);
+  return tebexFetch<Category>(
+    `/categories/${id}?includePackages=1`,
+    [404, 422],
+  );
 }
 
+// Tebex returns 400 (not 404) for a package ID that doesn't exist.
 export function getPackage(id: number): Promise<Package | null> {
-  return tebexFetch<Package>(`/packages/${id}`);
+  return tebexFetch<Package>(`/packages/${id}`, [400, 404]);
 }

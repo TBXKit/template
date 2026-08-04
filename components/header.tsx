@@ -1,11 +1,12 @@
+import Image from "next/image";
 import Link from "next/link";
-import type { Category } from "@/lib/tebex/types";
+import type { Category, Webstore } from "@/lib/tebex/types";
 
 export function Header({
-  siteName,
+  webstore,
   categories,
 }: {
-  siteName: string;
+  webstore: Webstore;
   categories: Category[];
 }) {
   const links = [
@@ -19,8 +20,21 @@ export function Header({
   return (
     <header className="relative border-b border-border">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-lg font-semibold text-foreground">
-          {siteName}
+        <Link
+          href="/"
+          className="flex items-center gap-2 text-lg font-semibold text-foreground"
+        >
+          {webstore.logo ? (
+            <Image
+              src={webstore.logo}
+              alt=""
+              width={28}
+              height={28}
+              unoptimized
+              className="rounded-sm"
+            />
+          ) : null}
+          {webstore.name}
         </Link>
 
         <nav className="hidden gap-6 md:flex">
