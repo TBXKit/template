@@ -1,3 +1,13 @@
+/**
+ * App-facing domain types, deliberately kept separate from the generated
+ * OpenAPI schema (`./generated/schema`). The generated types mark every
+ * field optional (the spec doesn't declare `required`) and, for the two
+ * single-item endpoints this app uses, type `data` as an array even though
+ * the live API returns a single object — neither is a shape components
+ * should be written against. These types describe what the API actually
+ * returns and what the UI actually needs; `lib/tebex/index.ts` is the only
+ * place that bridges the two.
+ */
 export interface Webstore {
   id: number;
   name: string;

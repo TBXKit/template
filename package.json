@@ -7,10 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "biome check",
-    "format": "biome format --write"
+    "format": "biome format --write",
+    "generate:tebex-types": "openapi-typescript https://raw.githubusercontent.com/tebexio/TebexHeadless-OpenAPI/refs/heads/main/headless-api.yaml -o lib/tebex/generated/schema.ts && biome format --write lib/tebex/generated/schema.ts"
   },
   "dependencies": {
     "next": "16.3.0",
+    "openapi-fetch": "^0.17.0",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
@@ -20,6 +22,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^5"
   }

@@ -25,7 +25,7 @@ This repository is a customizable **Tebex storefront theme**: a Next.js template
 
 - `app/` — routes only (pages, layout, error/not-found boundaries, global CSS entry). No business logic lives here beyond composing `lib/tebex` calls and passing props to components.
 - `components/` — presentational, prop-driven UI. See "Component Organization" below for how it's subdivided.
-- `lib/tebex/` — the sole Tebex data-access layer (`index.ts` for fetch functions, `types.ts` for the domain types). See "Tebex Integration".
+- `lib/tebex/` — the sole Tebex data-access layer: `index.ts` (application-facing fetch functions), `client.ts` (the `openapi-fetch` wrapper), `types.ts` (domain types), `generated/schema.ts` (OpenAPI-generated types, not hand-edited). See "Tebex Integration".
 - `themes/` — CSS files defining design tokens (colors, radius, spacing) as custom properties. `default.css` is the shipped theme; alternate themes are sibling files swapped via one `@import` in `app/globals.css`.
 
 Don't introduce a `hooks/`, `services/`, `utils/`, or similar generic top-level folder unless there's already code that needs it — the current structure has stayed flat on purpose.
@@ -44,11 +44,12 @@ Don't introduce a `hooks/`, `services/`, `utils/`, or similar generic top-level 
 
 # Tebex Integration
 
-- `lib/tebex/index.ts` is the application's only interface to the Tebex Headless API. It reads `TEBEX_PUBLIC_TOKEN` from the environment, builds `https://headless.tebex.io/api/accounts/{token}/...` URLs, and exposes four functions: `getWebstore`, `getCategories`, `getCategory(id)`, `getPackage(id)`. Requests are cached via `next: { revalidate: 300 }`.
-- **Only pages and the root layout call these functions.** Components receive already-fetched data as props; they don't know the Tebex API exists. If a new component needs Tebex data, fetch it in the owning page/layout and pass it down — don't reach into `lib/tebex` from inside `components/`.
-- Tebex's API is inconsistent about "not found" status codes per endpoint (a bad category ID returns 422, a bad package ID returns 400, not 404). `getCategory`/`getPackage` account for this explicitly via the `notFoundStatuses` parameter to `tebexFetch`, returning `null` so pages can call `notFound()`. Follow this pattern (explicit expected-status allowlist, not blanket `try/catch`) for any new Tebex endpoint.
-- `lib/tebex/types.ts` defines the domain shape (`Webstore`, `Category`, `Package`, `BaseItem`, `PackageType`). These types — not raw Tebex API responses — are what flows through props into components.
-- There is no basket, checkout, or auth integration yet; `PackageType` (`"subscription" | "single"`) is modeled but not currently used to change rendering anywhere. Don't build speculative basket/cart plumbing unless asked — it doesn't exist today.
+- `lib/tebex/index.ts` is the application's only interface to the Tebex Headless API, and the only file that should be imported from `app/`. It exposes four functions — `getWebstore`, `getCategories`, `getCategory(id)`, `getPackage(id)` — that return app-facing domain types, not raw API responses.
+- Requests are made through `openapi-fetch`, typed against `lib/tebex/generated/schema.ts` (generated from Tebex's published OpenAPI spec via `npm run generate:tebex-types`; regenerate rather than hand-edit — see that file's own "do not edit" banner). `lib/tebex/client.ts` is the thin handwritten wrapper: it builds the token-scoped base URL from `TEBEX_PUBLIC_TOKEN`, creates the `openapi-fetch` client, and centralizes response resolution (`resolveTebexResponse`) — mapping expected "not found" statuses to `null` and throwing on anything else. Requests are cached via `next: { revalidate: 300 }`.
+- **Only pages and the root layout call `lib/tebex` functions.** Components receive already-fetched data as props; they don't know the Tebex API — or `openapi-fetch` — exists. If a new component needs Tebex data, fetch it in the owning page/layout and pass it down.
+- Tebex's API is inconsistent about "not found" status codes per endpoint (a bad category ID returns 422, a bad package ID returns 400, not 404). `getCategory`/`getPackage` account for this explicitly via the `notFoundStatuses` parameter to `resolveTebexResponse`, returning `null` so pages can call `notFound()`. Follow this pattern (explicit expected-status allowlist, not blanket `try/catch`) for any new Tebex endpoint.
+- `lib/tebex/types.ts` defines the app domain shape (`Webstore`, `Category`, `Package`, `BaseItem`, `PackageType`) and is deliberately **not** an alias of the generated schema types: the OpenAPI spec marks every field optional, and — for the single-category and single-package endpoints specifically — types the response `data` as an array even though the live API returns a single object. `lib/tebex/index.ts` is the one place that casts the generated shape down to the domain type; nothing else should touch `generated/schema.ts` directly.
+- There is no basket, checkout, or auth integration yet; `PackageType` (`"subscription" | "single"`) is modeled but not currently used to change rendering anywhere. The OpenAPI spec covers baskets, coupons, gift cards, creator codes, tiered/dynamic categories, and sidebar modules — none implemented here, and several (`getUserTieredCategories`, `updateTier`) require basic-auth private-key credentials this app doesn't have. Don't build speculative basket/cart plumbing unless asked.
 
 # Development Philosophy
 
@@ -63,4 +64,41 @@ Don't introduce a `hooks/`, `services/`, `utils/`, or similar generic top-level 
 - Biome (`biome.json`) is the linter/formatter — run `npm run lint` (`biome check`) and `npm run format` (`biome format --write`). There is no separate ESLint/Prettier config to reconcile with.
 - There is no test runner configured in this repo (no Jest/Vitest, no test files). Don't assume a `npm test` script exists.
 - `TEBEX_PUBLIC_TOKEN` (see `.env.example`) is required for any local run — every route fetches from Tebex at request/build time and will throw if it's unset.
+- `npm run generate:tebex-types` regenerates `lib/tebex/generated/schema.ts` from Tebex's remote OpenAPI spec and reformats it. Run it after a Tebex API change; the YAML itself is not vendored into the repo.
 - Every route delegates its presentational markup to a component (`CategoryGrid`/`CategoryDetail`, `PackageDetail`) rather than inlining JSX in `page.tsx` — the page's job is fetching data, resolving 404s, and composing components inside the shared `mx-auto max-w-6xl px-6 py-16` wrapper. Follow this for new routes rather than writing markup directly in the page.
+
+
+## Design Philosophy
+
+This project prioritizes clarity over abstraction.
+
+Build the simplest solution that accurately represents the Tebex domain. Avoid introducing layers, generic reusable components, or infrastructure until there is a demonstrated need.
+
+Prefer feature-oriented organization, CSS-first customization, and explicit data flow from pages to presentational components.
+
+This repository intentionally does not depend on a UI component library.
+
+Do not introduce shadcn/ui, Radix UI, Headless UI, MUI, Chakra UI, or similar unless explicitly requested.
+
+Prefer writing small, project-specific components.
+
+
+## Feature-first organization
+
+Prefer organizing code around Tebex domains rather than technical categories.
+
+Examples:
+
+- category/
+- package/
+- cart/
+- navigation/
+
+Avoid generic groupings such as:
+
+- common/
+- shared/
+- layout/
+- ui/
+
+unless there is a demonstrated need.

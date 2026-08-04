@@ -1,64 +1,56 @@
+import { resolveTebexResponse, tebexClient } from "./client";
 import type { Category, Package, Webstore } from "./types";
 
-const API_BASE = "https://headless.tebex.io/api";
-
-function accountPath(path: string) {
-  const token = process.env.TEBEX_PUBLIC_TOKEN;
-
-  if (!token) {
-    throw new Error("TEBEX_PUBLIC_TOKEN is not set");
-  }
-
-  return `${API_BASE}/accounts/${token}${path}`;
-}
-
-async function tebexFetch<T>(
-  path: string,
-  notFoundStatuses: number[] = [404],
-): Promise<T | null> {
-  const res = await fetch(accountPath(path), {
-    headers: { "Content-Type": "application/json" },
-    next: { revalidate: 300 },
-  });
-
-  if (notFoundStatuses.includes(res.status)) {
-    return null;
-  }
-
-  if (!res.ok) {
-    throw new Error(`Tebex API request failed (${res.status}): ${path}`);
-  }
-
-  const json = (await res.json()) as { data: T };
-  return json.data;
-}
+const CACHE_OPTIONS = { next: { revalidate: 300 } } as const;
 
 export async function getWebstore(): Promise<Webstore> {
-  const webstore = await tebexFetch<Webstore>("");
+  const { GET } = tebexClient();
+  const webstore = await resolveTebexResponse(GET("/", CACHE_OPTIONS));
 
-  if (!webstore) {
+  if (!webstore?.data) {
     throw new Error("Webstore data is unavailable");
   }
 
-  return webstore;
+  return webstore.data as unknown as Webstore;
 }
 
 export async function getCategories(): Promise<Category[]> {
-  const categories = await tebexFetch<Category[]>(
-    "/categories?includePackages=1",
+  const { GET } = tebexClient();
+  const categories = await resolveTebexResponse(
+    GET("/categories?includePackages=1", CACHE_OPTIONS),
   );
-  return categories ?? [];
+
+  return (categories?.data as unknown as Category[] | undefined) ?? [];
 }
 
 // Tebex returns 422 (not 404) for a category ID that doesn't exist.
-export function getCategory(id: number): Promise<Category | null> {
-  return tebexFetch<Category>(
-    `/categories/${id}?includePackages=1`,
+export async function getCategory(id: number): Promise<Category | null> {
+  const { GET } = tebexClient();
+  const category = await resolveTebexResponse(
+    GET("/categories/{categoryId}?includePackages=1", {
+      ...CACHE_OPTIONS,
+      params: { path: { categoryId: String(id) } },
+    }),
     [404, 422],
   );
+
+  // The OpenAPI schema reuses CategoryResponse (data: Category[]) for this
+  // endpoint, but the live API returns a single Category object in `data`.
+  return (category?.data as unknown as Category | undefined) ?? null;
 }
 
 // Tebex returns 400 (not 404) for a package ID that doesn't exist.
-export function getPackage(id: number): Promise<Package | null> {
-  return tebexFetch<Package>(`/packages/${id}`, [400, 404]);
+export async function getPackage(id: number): Promise<Package | null> {
+  const { GET } = tebexClient();
+  const pkg = await resolveTebexResponse(
+    GET("/packages/{packageId}", {
+      ...CACHE_OPTIONS,
+      params: { path: { packageId: String(id) } },
+    }),
+    [400, 404],
+  );
+
+  // Likewise, PackageResponse types `data` as Package[], but this endpoint
+  // returns a single Package object at runtime.
+  return (pkg?.data as unknown as Package | undefined) ?? null;
 }
