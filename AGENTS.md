@@ -41,6 +41,7 @@ Don't introduce a `hooks/`, `services/`, `utils/`, or similar generic top-level 
 - **Tailwind v4**, CSS-first config — there is no `tailwind.config.ts`. `app/globals.css` does `@import "tailwindcss"` followed by `@import "../themes/default.css"`, then an `@theme inline` block that maps theme CSS variables (`--background`, `--primary`, `--radius`, `--section-spacing`, …) onto Tailwind utility names (`bg-background`, `text-primary`, `rounded-lg`, `py-section`).
 - **Theme values live in `themes/*.css`** as plain CSS custom properties, with light values in `:root` and dark values in an `@media (prefers-color-scheme: dark)` block. Reskinning the store means copying `themes/default.css`, editing the variable values, and repointing the `@import` in `app/globals.css` — no component changes required. This is documented in `README.md`; keep that doc in sync if the token set changes.
 - **Use theme utilities, not hardcoded values**, so themes stay swappable: `text-foreground` / `text-muted-foreground` / `bg-card` / `border-border` / `text-primary`, not raw Tailwind color scales like `text-zinc-950`.
+- All `<Image>` usages pass `unoptimized`. This is deliberate, not an oversight: package/logo images come from whatever CDN domain the store's own Tebex account uses, which isn't known ahead of time — `next.config.ts` can't pre-register `images.remotePatterns` for a domain that varies per deployment of this theme. Keep `unoptimized` on any new `<Image>` that renders Tebex-supplied media.
 
 # Tebex Integration
 
@@ -66,6 +67,9 @@ Don't introduce a `hooks/`, `services/`, `utils/`, or similar generic top-level 
 - `TEBEX_PUBLIC_TOKEN` (see `.env.example`) is required for any local run — every route fetches from Tebex at request/build time and will throw if it's unset.
 - `npm run generate:tebex-types` regenerates `lib/tebex/generated/schema.ts` from Tebex's remote OpenAPI spec and reformats it. Run it after a Tebex API change; the YAML itself is not vendored into the repo.
 - Every route delegates its presentational markup to a component (`CategoryGrid`/`CategoryDetail`, `PackageDetail`) rather than inlining JSX in `page.tsx` — the page's job is fetching data, resolving 404s, and composing components inside the shared `mx-auto max-w-6xl px-6 py-16` wrapper. Follow this for new routes rather than writing markup directly in the page.
+- Every route that fetches data has a sibling `loading.tsx` (App Router convention — automatically wraps the page in a Suspense boundary). Each one is a self-contained pulsing skeleton shaped like that route's actual layout, not a shared/generic spinner component. Add one for any new data-fetching route.
+- Known trade-off: because `/category/[id]` and `/package/[id]` now stream behind `loading.tsx`, Next.js sends the response headers (status `200`) before `notFound()` can run, so an invalid category/package ID responds with HTTP `200` and the not-found UI arrives via the stream rather than as a `404` status. The correct not-found content still renders (verified against a live store) — only the raw status code is affected. This is standard Next.js streaming behavior, not a bug in this app; don't try to "fix" it by removing the Suspense boundary.
+- `.gitattributes` pins text files to LF. Don't remove it — without it, `npm run lint` fails on a fresh Windows clone because Biome expects LF but Windows checks out CRLF by default.
 
 
 ## Design Philosophy

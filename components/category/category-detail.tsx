@@ -1,5 +1,5 @@
-import type { Category } from "@/lib/tebex/types";
 import { PackageCard } from "@/components/package/package-card";
+import type { Category } from "@/lib/tebex/types";
 
 export function CategoryDetail({
   category,

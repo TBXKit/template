@@ -1,0 +1,20 @@
+export default function HomeLoading() {
+  return (
+    <>
+      <section className="border-b border-border bg-muted px-6 py-section text-center">
+        <div className="mx-auto h-10 w-64 animate-pulse rounded-lg bg-card sm:h-12" />
+      </section>
+      <div className="mx-auto max-w-6xl px-6 py-16">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list, never reordered
+              key={i}
+              className="h-32 animate-pulse rounded-lg border border-border bg-card"
+            />
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
