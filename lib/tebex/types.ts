@@ -15,6 +15,10 @@ export interface Webstore {
   currency: string;
   lang: string;
   logo: string | null;
+  /** True if the store is currently disabled for purchases in the Tebex dashboard. */
+  disabled: boolean;
+  /** e.g. "Minecraft: Java Edition" */
+  platform_type: string;
 }
 
 export interface BaseItem {
@@ -29,11 +33,18 @@ export interface Package extends BaseItem {
   type: PackageType;
   base_price: number;
   total_price: number;
+  /** Amount deducted from base_price to reach total_price; 0 when not on sale. */
+  discount: number;
   image: string | null;
   category: BaseItem;
 }
 
+export type CategoryDisplayType = "list" | "grid";
+
 export interface Category extends BaseItem {
   description: string;
   packages: Package[];
+  image_url: string | null;
+  /** Owner-configured presentation, set in the Tebex dashboard. Anything other than "list" is treated as "grid". */
+  display_type: CategoryDisplayType;
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
+import { StoreDisabledBanner } from "@/components/store-disabled-banner";
 import { getCategories, getWebstore } from "@/lib/tebex";
 import "./globals.css";
 
@@ -63,11 +64,15 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
+        {webstore.disabled ? <StoreDisabledBanner /> : null}
         <Header webstore={webstore} categories={categories} />
         <main id="main-content" className="flex-1">
           {children}
         </main>
-        <Footer siteName={webstore.name} />
+        <Footer
+          siteName={webstore.name}
+          platformType={webstore.platform_type}
+        />
       </body>
     </html>
   );

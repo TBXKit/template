@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { Package } from "@/lib/tebex/types";
+import { PackageBadge } from "./package-badge";
 import { PackagePrice } from "./package-price";
 
 export function PackageDetail({
@@ -25,8 +26,11 @@ export function PackageDetail({
       </div>
       <div>
         <h1 className="text-3xl font-semibold text-foreground">{pkg.name}</h1>
+        <PackageBadge type={pkg.type} className="mt-3" />
         <PackagePrice
-          amount={pkg.total_price}
+          basePrice={pkg.base_price}
+          totalPrice={pkg.total_price}
+          discount={pkg.discount}
           currency={currency}
           className="mt-2 block text-xl font-medium text-primary"
         />
@@ -34,7 +38,11 @@ export function PackageDetail({
           <p className="mt-6 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
             {pkg.description}
           </p>
-        ) : null}
+        ) : (
+          <p className="mt-6 text-sm italic text-muted-foreground">
+            No description available.
+          </p>
+        )}
       </div>
     </div>
   );

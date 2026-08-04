@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { PackageDetail } from "@/components/package/package-detail";
 import { getPackage, getWebstore } from "@/lib/tebex";
 
@@ -52,6 +53,13 @@ export default async function PackagePage({
         type="application/ld+json"
         // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD built from server-fetched Tebex data, not user input
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
+      <Breadcrumbs
+        items={[
+          { href: "/", label: "Home" },
+          { href: `/category/${pkg.category.id}`, label: pkg.category.name },
+          { label: pkg.name },
+        ]}
       />
       <PackageDetail pkg={pkg} currency={webstore.currency} />
     </div>
