@@ -63,6 +63,17 @@ Don't introduce a `hooks/`, `services/`, `utils/`, or similar generic top-level 
 - **Folders are earned, not default.** A domain gets a `components/<domain>/` folder once it has more than one component; a single component stays a flat file. Don't pre-create empty structure for anticipated future components.
 - **Keep business/data logic out of `components/`.** If you find yourself wanting `fetch`, env vars, or Tebex-specific branching inside a component, that logic belongs in the page or in `lib/tebex` instead.
 
+# Testing
+
+- **Vitest** is the test framework, run via `npm run test` (once) or `npm run test:watch` (watch mode). Config is `vitest.config.mts` (jsdom environment, `@/` alias matching `tsconfig.json`) and `vitest.setup.ts` (registers `@testing-library/jest-dom`'s matchers). As of v0.1.3 this is infrastructure only — `test/smoke.test.tsx` proves the setup works and is not a template for feature tests; it should not be extended.
+- **Tests live next to the code they test**, not in a mirrored test tree: `lib/tebex/mapper.test.ts` beside `mapper.ts`, `components/package/package-price.test.tsx` beside `package-price.tsx`. The top-level `test/` folder is reserved for cross-cutting setup/infrastructure only.
+- **Vitest cannot render `async` Server Components** (a Vitest/React ecosystem limitation, not something this config can work around — see the [Next.js Vitest guide](https://nextjs.org/docs/app/guides/testing/vitest)). Every route under `app/` (`page.tsx`, `layout.tsx`) is an async Server Component per this project's architecture, so **unit tests only ever target `components/*`** (which are synchronous and prop-driven by design) or plain functions in `lib/`. Don't attempt to `render()` an `app/**/page.tsx` in a Vitest test — it won't work, and testing that layer would need E2E tooling, which is out of scope until explicitly decided.
+- **Use React Testing Library for component behavior** (`@testing-library/react`, already installed) — query by role/text the way a user would, not by internal component state or implementation details.
+- **Prefer behavior testing over implementation testing.** Assert on what a component renders or what a function returns, not on how it's implemented internally — implementation details should be free to change without breaking tests.
+- **Do not test Next.js internals.** Don't write tests asserting on App Router routing behavior, `generateMetadata` internals, or framework plumbing — trust Next.js to do its job; test this app's own logic and rendering.
+- **Do not call external APIs in tests**, including the real Tebex Headless API. Tests must not depend on `TEBEX_PUBLIC_TOKEN` or network access — future `lib/tebex` tests should exercise `mapper.ts`'s normalization logic against inline fixture data, not live requests.
+- **Add tests incrementally as functionality is introduced or changed** — this is not a retroactive coverage push. There is no coverage threshold enforced; write a test when it's the natural way to pin down behavior you're adding or fixing.
+
 # Repository-Specific Guidance
 
 - Biome (`biome.json`) is the linter/formatter — run `npm run lint` (`biome check`) and `npm run format` (`biome format --write`). There is no separate ESLint/Prettier config to reconcile with.

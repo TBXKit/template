@@ -32,7 +32,20 @@ Open [http://localhost:3000](http://localhost:3000). Every route fetches live da
 | `npm run start` | Run a production build |
 | `npm run lint` | Biome check (lint + format check) |
 | `npm run format` | Biome format, writing fixes |
+| `npm run test` | Run the test suite once |
+| `npm run test:watch` | Run the test suite in watch mode |
 | `npm run generate:tebex-types` | Regenerate `lib/tebex/generated/schema.ts` from Tebex's OpenAPI spec |
+
+## Testing
+
+Tests run on [Vitest](https://vitest.dev), with [React Testing Library](https://testing-library.com/react) for component behavior and [jsdom](https://github.com/jsdom/jsdom) as the DOM environment. Configuration lives in `vitest.config.mts` (test runner + the `@/` path alias, matching `tsconfig.json`) and `vitest.setup.ts` (registers `@testing-library/jest-dom`'s matchers).
+
+```bash
+npm run test        # run once
+npm run test:watch  # watch mode
+```
+
+`test/` holds infrastructure-only tests (currently just a smoke test proving the setup works) — it is not where feature coverage belongs. As real coverage is added, tests should live next to the code they test: `lib/tebex/mapper.test.ts` beside `mapper.ts`, `components/package/package-price.test.tsx` beside `package-price.tsx`, and so on. See [`AGENTS.md`](AGENTS.md) for testing conventions.
 
 ## Theming
 
