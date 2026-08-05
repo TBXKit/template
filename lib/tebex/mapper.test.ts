@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { components } from "./generated/schema";
 import { mapCategory, mapPackage, mapWebstore } from "./mapper";
+import type { Category, Package, Webstore } from "./types";
 
 // The generated schema doesn't declare `supports_usernames` / `supports_gifting`
 // on Webstore even though the live API returns them (see mapper.ts) — extend
@@ -58,6 +59,120 @@ function buildRawCategory(overrides: Partial<RawCategory> = {}): RawCategory {
     packages: [],
     ...overrides,
   };
+}
+
+// --- adversarial-test helpers ---------------------------------------------
+
+function deepFreeze<T>(value: T): T {
+  if (Array.isArray(value)) {
+    for (const item of value) deepFreeze(item);
+    return Object.freeze(value) as T;
+  }
+  if (value !== null && typeof value === "object") {
+    for (const key of Object.keys(value)) {
+      deepFreeze((value as Record<string, unknown>)[key]);
+    }
+    return Object.freeze(value) as T;
+  }
+  return value;
+}
+
+function assertBaseItemInvariants(item: unknown): void {
+  expect(typeof item).toBe("object");
+  expect(item).not.toBeNull();
+  const base = item as Record<string, unknown>;
+  expect(typeof base.id).toBe("number");
+  expect(Number.isFinite(base.id as number)).toBe(true);
+  expect(typeof base.name).toBe("string");
+}
+
+function assertPackageInvariants(pkg: Package): void {
+  expect(typeof pkg.id).toBe("number");
+  expect(Number.isFinite(pkg.id)).toBe(true);
+  expect(typeof pkg.name).toBe("string");
+  expect(typeof pkg.description).toBe("string");
+  expect(pkg.image === null || typeof pkg.image === "string").toBe(true);
+  expect(Array.isArray(pkg.media)).toBe(true);
+  for (const media of pkg.media) {
+    expect(["image", "video"]).toContain(media.type);
+    expect(typeof media.url).toBe("string");
+    expect(typeof media.primary).toBe("boolean");
+  }
+  expect(["single", "subscription"]).toContain(pkg.type);
+  expect(typeof pkg.base_price).toBe("number");
+  expect(Number.isFinite(pkg.base_price)).toBe(true);
+  expect(typeof pkg.discount).toBe("number");
+  expect(Number.isFinite(pkg.discount)).toBe(true);
+  expect(typeof pkg.total_price).toBe("number");
+  expect(Number.isFinite(pkg.total_price)).toBe(true);
+  expect(
+    pkg.expiration_date === null || typeof pkg.expiration_date === "string",
+  ).toBe(true);
+  assertBaseItemInvariants(pkg.category);
+}
+
+function assertCategoryInvariants(category: Category): void {
+  expect(typeof category.id).toBe("number");
+  expect(Number.isFinite(category.id)).toBe(true);
+  expect(typeof category.name).toBe("string");
+  expect(typeof category.description).toBe("string");
+  expect(
+    category.image_url === null || typeof category.image_url === "string",
+  ).toBe(true);
+  expect(["grid", "list"]).toContain(category.display_type);
+  expect(Array.isArray(category.packages)).toBe(true);
+  for (const pkg of category.packages) {
+    assertPackageInvariants(pkg);
+  }
+}
+
+function assertWebstoreInvariants(webstore: Webstore): void {
+  expect(typeof webstore.id).toBe("number");
+  expect(Number.isFinite(webstore.id)).toBe(true);
+  expect(typeof webstore.name).toBe("string");
+  expect(typeof webstore.description).toBe("string");
+  expect(webstore.logo === null || typeof webstore.logo === "string").toBe(
+    true,
+  );
+  expect(typeof webstore.currency).toBe("string");
+  expect(typeof webstore.lang).toBe("string");
+  expect(typeof webstore.disabled).toBe("boolean");
+  expect(typeof webstore.platform_type).toBe("string");
+  expect(typeof webstore.supports_usernames).toBe("boolean");
+  expect(typeof webstore.supports_gifting).toBe("boolean");
+}
+
+// Deliberately not exhaustive — just a spread of shapes a genuinely broken
+// API response could plausibly send in place of a well-formed value.
+const CORRUPTIONS: unknown[] = [
+  undefined,
+  null,
+  42,
+  -1,
+  Number.NaN,
+  Number.POSITIVE_INFINITY,
+  "unexpected-string",
+  "",
+  true,
+  false,
+  [],
+  {},
+  ["nested", "array"],
+];
+
+function pick<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+/** Randomly replaces ~40% of a fixture's top-level fields with garbage. */
+function corrupt(input: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = { ...input };
+  for (const key of Object.keys(result)) {
+    if (Math.random() < 0.4) {
+      result[key] = pick(CORRUPTIONS);
+    }
+  }
+  return result;
 }
 
 describe("mapWebstore", () => {
@@ -316,5 +431,514 @@ describe("mapCategory", () => {
       name: "Elite Rank",
       category: { id: 10, name: "Ranks" },
     });
+  });
+});
+
+describe("mapWebstore — adversarial input", () => {
+  it("maps every optional field explicitly null without throwing", () => {
+    expect(() =>
+      mapWebstore({
+        id: null as unknown as number,
+        name: null as unknown as string,
+        description: null as unknown as string,
+        logo: null,
+        currency: null as unknown as string,
+        lang: null as unknown as string,
+        disabled: null as unknown as boolean,
+        platform_type: null as unknown as string,
+      }),
+    ).not.toThrow();
+  });
+
+  it("falls back to defaults for wrong scalar types instead of passing them through", () => {
+    const result = mapWebstore({
+      id: "not-a-number" as unknown as number,
+      disabled: "yes" as unknown as boolean,
+      currency: 840 as unknown as string, // ISO 4217 numeric code, wrong shape
+      lang: true as unknown as string,
+    } as unknown as RawWebstore);
+
+    expect(result.id).toBe(0);
+    expect(result.disabled).toBe(false);
+    expect(result.currency).toBe("USD");
+    expect(result.lang).toBe("en");
+  });
+
+  it("keeps empty strings as empty strings rather than substituting a default", () => {
+    const result = mapWebstore(
+      buildRawWebstore({ name: "", description: "", platform_type: "" }),
+    );
+
+    expect(result.name).toBe("");
+    expect(result.description).toBe("");
+    expect(result.platform_type).toBe("");
+  });
+
+  it("handles an excessively long description without truncating or throwing", () => {
+    const longDescription = "A".repeat(50_000);
+
+    const result = mapWebstore(
+      buildRawWebstore({ description: longDescription }),
+    );
+
+    expect(result.description).toBe(longDescription);
+    expect(result.description).toHaveLength(50_000);
+  });
+
+  it("ignores unknown extra properties instead of leaking them onto the domain object", () => {
+    const result = mapWebstore({
+      ...buildRawWebstore(),
+      unexpected_field: "should not appear",
+    } as RawWebstore);
+
+    expect(result).not.toHaveProperty("unexpected_field");
+  });
+
+  it("does not throw when called with a frozen input object", () => {
+    const raw = deepFreeze(buildRawWebstore());
+
+    expect(() => mapWebstore(raw)).not.toThrow();
+  });
+
+  it("never mutates its input", () => {
+    const raw = buildRawWebstore();
+    const snapshot = JSON.parse(JSON.stringify(raw));
+
+    mapWebstore(raw);
+
+    expect(raw).toEqual(snapshot);
+  });
+
+  it("is deterministic across repeated calls with the same object", () => {
+    const raw = buildRawWebstore();
+
+    expect(mapWebstore(raw)).toEqual(mapWebstore(raw));
+  });
+
+  it("returns a fully-defaulted Webstore when called with null, undefined, or a primitive", () => {
+    for (const garbage of [null, undefined, 42, "not an object", []]) {
+      expect(() =>
+        mapWebstore(garbage as unknown as RawWebstore),
+      ).not.toThrow();
+      assertWebstoreInvariants(mapWebstore(garbage as unknown as RawWebstore));
+    }
+  });
+});
+
+describe("mapCategory — adversarial and malformed nested data", () => {
+  it("drops a null entry in packages instead of crashing the whole category", () => {
+    const result = mapCategory(
+      buildRawCategory({
+        packages: [
+          buildRawPackage({ id: 1 }),
+          null,
+          buildRawPackage({ id: 2 }),
+        ] as RawCategory["packages"],
+      }),
+    );
+
+    expect(result.packages.map((pkg) => pkg.id)).toEqual([1, 2]);
+  });
+
+  it("drops primitive entries in packages instead of crashing", () => {
+    const result = mapCategory(
+      buildRawCategory({
+        packages: [
+          buildRawPackage({ id: 1 }),
+          42,
+          "not a package",
+          true,
+        ] as unknown as RawCategory["packages"],
+      }),
+    );
+
+    expect(result.packages.map((pkg) => pkg.id)).toEqual([1]);
+  });
+
+  it("maps an empty-object package entry to a fully-defaulted placeholder rather than dropping it", () => {
+    const result = mapCategory(
+      buildRawCategory({ packages: [{}] as RawCategory["packages"] }),
+    );
+
+    expect(result.packages).toHaveLength(1);
+    expect(result.packages[0]).toMatchObject({ id: 0, name: "" });
+  });
+
+  it.each([
+    ["a number", 42],
+    ["an object", { foo: "bar" }],
+    ["null", null],
+    ["an array", ["list"]],
+  ])('normalizes display_type of %s to "grid"', (_label, value) => {
+    const result = mapCategory(
+      buildRawCategory({
+        display_type: value as unknown as RawCategory["display_type"],
+      }),
+    );
+
+    expect(result.display_type).toBe("grid");
+  });
+
+  it("keeps duplicate packages rather than silently deduplicating them", () => {
+    const duplicate = buildRawPackage({ id: 5, name: "Duplicate" });
+
+    const result = mapCategory(
+      buildRawCategory({ packages: [duplicate, duplicate] }),
+    );
+
+    expect(result.packages).toHaveLength(2);
+    expect(result.packages[0]).toEqual(result.packages[1]);
+  });
+
+  it("falls back to defaults for a missing id and name", () => {
+    const result = mapCategory(
+      buildRawCategory({ id: undefined, name: undefined }),
+    );
+
+    expect(result.id).toBe(0);
+    expect(result.name).toBe("");
+  });
+
+  it("ignores unknown extra properties", () => {
+    const result = mapCategory({
+      ...buildRawCategory(),
+      unexpected_field: "should not appear",
+    } as RawCategory);
+
+    expect(result).not.toHaveProperty("unexpected_field");
+  });
+
+  it("does not throw when called with a frozen input object, including frozen nested packages", () => {
+    const raw = deepFreeze(buildRawCategory({ packages: [buildRawPackage()] }));
+
+    expect(() => mapCategory(raw)).not.toThrow();
+  });
+
+  it("never mutates its input, including nested package objects", () => {
+    const raw = buildRawCategory({ packages: [buildRawPackage()] });
+    const snapshot = JSON.parse(JSON.stringify(raw));
+
+    mapCategory(raw);
+
+    expect(raw).toEqual(snapshot);
+  });
+
+  it("is deterministic across repeated calls with the same object", () => {
+    const raw = buildRawCategory({ packages: [buildRawPackage()] });
+
+    expect(mapCategory(raw)).toEqual(mapCategory(raw));
+  });
+
+  it("returns a fully-defaulted Category when called with null, undefined, or a primitive", () => {
+    for (const garbage of [null, undefined, 42, "not an object", []]) {
+      expect(() =>
+        mapCategory(garbage as unknown as RawCategory),
+      ).not.toThrow();
+      assertCategoryInvariants(mapCategory(garbage as unknown as RawCategory));
+    }
+  });
+});
+
+describe("mapPackage — adversarial input", () => {
+  it("falls back to the default category for a malformed (non-object) category", () => {
+    for (const malformed of ["a string", 42, true, ["array"]]) {
+      const result = mapPackage(
+        buildRawPackage({
+          category: malformed as unknown as RawPackage["category"],
+        }),
+      );
+
+      expect(result.category).toEqual({ id: 0, name: "" });
+    }
+  });
+
+  it("falls back to an empty media array for a malformed (non-array) media field", () => {
+    for (const malformed of ["a string", 42, {}, true]) {
+      const result = mapPackage(
+        buildRawPackage({ media: malformed as unknown as RawPackage["media"] }),
+      );
+
+      expect(result.media).toEqual([]);
+    }
+  });
+
+  it("drops null and primitive entries within media instead of crashing", () => {
+    const media = [
+      { type: "image", url: "https://example.com/keep.png" },
+      null,
+      42,
+      "not media",
+      true,
+    ] as unknown as RawPackageMedia[];
+
+    const result = mapPackage(buildRawPackage({ media }));
+
+    expect(result.media).toEqual([
+      { type: "image", url: "https://example.com/keep.png", primary: false },
+    ]);
+  });
+
+  it("drops a media item whose url is not a string", () => {
+    const media = [
+      { type: "image", url: 12345 },
+    ] as unknown as RawPackageMedia[];
+
+    const result = mapPackage(buildRawPackage({ media }));
+
+    expect(result.media).toEqual([]);
+  });
+
+  it("does not coerce numeric strings for price/id fields — treats them as invalid", () => {
+    const result = mapPackage(
+      buildRawPackage({
+        id: "100" as unknown as number,
+        base_price: "9.99" as unknown as number,
+        discount: "2" as unknown as number,
+        total_price: "7.99" as unknown as number,
+      }),
+    );
+
+    expect(result.id).toBe(0);
+    expect(result.base_price).toBe(0);
+    expect(result.discount).toBe(0);
+    expect(result.total_price).toBe(0);
+  });
+
+  it("rejects NaN price values and falls back to 0", () => {
+    const result = mapPackage(
+      buildRawPackage({
+        base_price: Number.NaN,
+        discount: Number.NaN,
+        total_price: Number.NaN,
+      }),
+    );
+
+    expect(result.base_price).toBe(0);
+    expect(result.discount).toBe(0);
+    expect(result.total_price).toBe(0);
+  });
+
+  it("rejects Infinity price values and falls back to 0", () => {
+    const result = mapPackage(
+      buildRawPackage({
+        base_price: Number.POSITIVE_INFINITY,
+        total_price: Number.NEGATIVE_INFINITY,
+      }),
+    );
+
+    expect(result.base_price).toBe(0);
+    expect(result.total_price).toBe(0);
+  });
+
+  it("passes a negative price through unchanged — the mapper validates shape, not business rules", () => {
+    const result = mapPackage(buildRawPackage({ base_price: -5 }));
+
+    expect(result.base_price).toBe(-5);
+  });
+
+  it("passes an extremely large price through unchanged", () => {
+    const result = mapPackage(buildRawPackage({ base_price: 1e15 }));
+
+    expect(result.base_price).toBe(1e15);
+  });
+
+  it("keeps an empty description as an empty string", () => {
+    const result = mapPackage(buildRawPackage({ description: "" }));
+
+    expect(result.description).toBe("");
+  });
+
+  it("maps a missing image to null", () => {
+    const result = mapPackage(buildRawPackage({ image: undefined }));
+
+    expect(result.image).toBeNull();
+  });
+
+  it.each([
+    ["a number", 20261231],
+    ["an object", {}],
+    ["an array", []],
+  ])("falls back to null for an expiration_date that is %s", (_label, value) => {
+    const result = mapPackage(
+      buildRawPackage({
+        expiration_date: value as unknown as RawPackage["expiration_date"],
+      }),
+    );
+
+    expect(result.expiration_date).toBeNull();
+  });
+
+  it("ignores unknown extra properties", () => {
+    const result = mapPackage({
+      ...buildRawPackage(),
+      unexpected_field: "should not appear",
+    } as RawPackage);
+
+    expect(result).not.toHaveProperty("unexpected_field");
+  });
+
+  it("does not throw when called with a frozen input object", () => {
+    const raw = deepFreeze(buildRawPackage());
+
+    expect(() => mapPackage(raw)).not.toThrow();
+  });
+
+  it("never mutates its input", () => {
+    const raw = buildRawPackage();
+    const snapshot = JSON.parse(JSON.stringify(raw));
+
+    mapPackage(raw);
+
+    expect(raw).toEqual(snapshot);
+  });
+
+  it("is deterministic across repeated calls with the same object", () => {
+    const raw = buildRawPackage();
+
+    expect(mapPackage(raw)).toEqual(mapPackage(raw));
+  });
+
+  it("returns a fully-defaulted Package when called with null, undefined, or a primitive", () => {
+    for (const garbage of [null, undefined, 42, "not an object", []]) {
+      expect(() => mapPackage(garbage as unknown as RawPackage)).not.toThrow();
+      assertPackageInvariants(mapPackage(garbage as unknown as RawPackage));
+    }
+  });
+});
+
+describe("domain invariants under hostile input", () => {
+  const hostilePackageFixtures: RawPackage[] = [
+    buildRawPackage(),
+    buildRawPackage({ type: "something-new" as RawPackage["type"] }),
+    buildRawPackage({
+      base_price: Number.NaN,
+      total_price: Number.POSITIVE_INFINITY,
+    }),
+    buildRawPackage({
+      category: "broken" as unknown as RawPackage["category"],
+    }),
+    buildRawPackage({ media: "broken" as unknown as RawPackage["media"] }),
+    {} as RawPackage,
+  ];
+
+  it.each(
+    hostilePackageFixtures.map((fixture, index) => [index, fixture]),
+  )("mapPackage fixture #%s always satisfies Package invariants", (_index, fixture) => {
+    assertPackageInvariants(mapPackage(fixture as RawPackage));
+  });
+
+  const hostileCategoryFixtures: RawCategory[] = [
+    buildRawCategory(),
+    buildRawCategory({
+      display_type: "unknown" as RawCategory["display_type"],
+    }),
+    buildRawCategory({
+      packages: [buildRawPackage(), null, 42, {}] as RawCategory["packages"],
+    }),
+    {} as RawCategory,
+  ];
+
+  it.each(
+    hostileCategoryFixtures.map((fixture, index) => [index, fixture]),
+  )("mapCategory fixture #%s always satisfies Category invariants", (_index, fixture) => {
+    assertCategoryInvariants(mapCategory(fixture as RawCategory));
+  });
+
+  const hostileWebstoreFixtures: RawWebstore[] = [
+    buildRawWebstore(),
+    buildRawWebstore({ id: "abc" as unknown as number }),
+    {} as RawWebstore,
+  ];
+
+  it.each(
+    hostileWebstoreFixtures.map((fixture, index) => [index, fixture]),
+  )("mapWebstore fixture #%s always satisfies Webstore invariants", (_index, fixture) => {
+    assertWebstoreInvariants(mapWebstore(fixture as RawWebstore));
+  });
+});
+
+describe("randomized resilience", () => {
+  const ITERATIONS = 200;
+
+  it("mapPackage never throws and always satisfies invariants under random corruption", () => {
+    for (let i = 0; i < ITERATIONS; i++) {
+      const raw = corrupt(
+        buildRawPackage() as unknown as Record<string, unknown>,
+      );
+
+      let result: Package | undefined;
+      expect(() => {
+        result = mapPackage(raw);
+      }).not.toThrow();
+      assertPackageInvariants(result as Package);
+    }
+  });
+
+  it("mapCategory never throws and always satisfies invariants under random corruption", () => {
+    for (let i = 0; i < ITERATIONS; i++) {
+      const raw = corrupt(
+        buildRawCategory() as unknown as Record<string, unknown>,
+      );
+
+      let result: Category | undefined;
+      expect(() => {
+        result = mapCategory(raw);
+      }).not.toThrow();
+      assertCategoryInvariants(result as Category);
+    }
+  });
+
+  it("mapWebstore never throws and always satisfies invariants under random corruption", () => {
+    for (let i = 0; i < ITERATIONS; i++) {
+      const raw = corrupt(
+        buildRawWebstore() as unknown as Record<string, unknown>,
+      );
+
+      let result: Webstore | undefined;
+      expect(() => {
+        result = mapWebstore(raw);
+      }).not.toThrow();
+      assertWebstoreInvariants(result as Webstore);
+    }
+  });
+
+  it("corrupts nested packages within a category and still satisfies invariants", () => {
+    for (let i = 0; i < ITERATIONS; i++) {
+      const raw = corrupt(
+        buildRawCategory({
+          packages: [
+            buildRawPackage(),
+            corrupt(buildRawPackage() as unknown as Record<string, unknown>),
+          ],
+        }) as unknown as Record<string, unknown>,
+      );
+
+      let result: Category | undefined;
+      expect(() => {
+        result = mapCategory(raw);
+      }).not.toThrow();
+      assertCategoryInvariants(result as Category);
+    }
+  });
+});
+
+describe("performance sanity", () => {
+  it("maps a category containing 1,000+ packages completely and correctly", () => {
+    const PACKAGE_COUNT = 2000;
+    const packages = Array.from({ length: PACKAGE_COUNT }, (_, index) =>
+      buildRawPackage({ id: index, name: `Package ${index}` }),
+    );
+
+    const result = mapCategory(buildRawCategory({ packages }));
+
+    expect(result.packages).toHaveLength(PACKAGE_COUNT);
+    expect(result.packages[0]).toMatchObject({ id: 0, name: "Package 0" });
+    expect(result.packages[PACKAGE_COUNT - 1]).toMatchObject({
+      id: PACKAGE_COUNT - 1,
+      name: `Package ${PACKAGE_COUNT - 1}`,
+    });
+    expect(result.packages.every((pkg) => typeof pkg.id === "number")).toBe(
+      true,
+    );
   });
 });
