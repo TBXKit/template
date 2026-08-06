@@ -1,8 +1,8 @@
 # Tebex Storefront Theme
 
-A customizable storefront theme for [Tebex](https://tebex.io) stores, built on Next.js 16 (App Router) and Tailwind v4. It renders your store's categories and packages from the [Tebex Headless API](https://docs.tebex.io/developers/headless-api/overview) — browse categories, browse packages, view package details, and manage a basket. It's meant to be forked and reskinned per store, not used as a multi-tenant product.
+A customizable storefront theme for [Tebex](https://tebex.io) stores, built on Next.js 16 (App Router) and Tailwind v4. It renders your store's categories and packages from the [Tebex Headless API](https://docs.tebex.io/developers/headless-api/overview) — browse, search, add to basket, apply coupons/gift cards/creator codes, check out, sign in, and gift a package to another player. It's meant to be forked and reskinned per store, not used as a multi-tenant product.
 
-The current release covers browsing (categories, packages, package detail) and a basket (add/remove items, `/cart`). Checkout, authentication, gifting, coupons/gift cards/creator codes, and account/purchase history are planned.
+The current release covers browsing (categories, packages, package detail, search), a basket (add/remove items, quantity, package variables, gifting, `/cart`), coupons/gift cards/creator codes, checkout via Tebex.js, authentication (username-based or external-provider redirect, depending on how your store is configured), and an account page. Purchase history isn't included — the public-token Headless API this app uses doesn't expose it; it requires Tebex's separate Plugin API and a private secret key, which this app deliberately doesn't hold. Multi-currency/locale switching also isn't included — the Headless API has no per-request mechanism for either.
 
 ## Getting started
 
@@ -13,7 +13,7 @@ npm install
 cp .env.example .env.local
 ```
 
-Set `TEBEX_PUBLIC_TOKEN` in `.env.local` to your store's public token, found at [creator.tebex.io/developers/api-keys](https://creator.tebex.io/developers/api-keys). This token is safe to use server-side — it only grants read access to storefront data (webstore info, categories, packages).
+Set `TEBEX_PUBLIC_TOKEN` in `.env.local` to your store's public token, found at [creator.tebex.io/developers/api-keys](https://creator.tebex.io/developers/api-keys). This is the same public, storefront-scoped token Tebex's own Headless API is built around — safe to use server-side, and distinct from the private secret key used by Tebex's separate Plugin API (which this app doesn't use or hold). It covers everything this storefront does: reading catalog data, and creating/mutating a visitor's own basket (add/remove items, coupons, checkout).
 
 Then run the dev server:
 
@@ -67,7 +67,7 @@ Store name, description, logo, and favicon are not theme tokens — they come fr
 
 Run `npm run generate:tebex-types` after a Tebex API change. Never hand-edit `lib/tebex/generated/schema.ts` — it's overwritten on every run.
 
-The rest of the app never touches the generated types or `openapi-fetch` directly: `lib/tebex/index.ts` is the only supported entry point for Tebex API calls (`getWebstore`, `getCategories`, `getCategory`, `getPackage`, plus basket read/write functions), returning the app-facing domain types from `lib/tebex/types.ts`. Basket/session state (the cookie holding a visitor's basket identity) is managed separately in `lib/tebex/session.ts`. See [`AGENTS.md`](AGENTS.md) for the full architecture.
+The rest of the app never touches the generated types or `openapi-fetch` directly: `lib/tebex/index.ts` is the only supported entry point for Tebex API calls — catalog reads (`getWebstore`, `getCategories`, `getCategory`, `getPackage`), basket read/write functions, coupon/gift-card/creator-code apply/remove, and external-provider login links — returning the app-facing domain types from `lib/tebex/types.ts`. Basket and auth session state (the cookies holding a visitor's basket identity and, where relevant, their username) are managed separately in `lib/tebex/session.ts`. See [`AGENTS.md`](AGENTS.md) for the full architecture.
 
 ## Deploying
 

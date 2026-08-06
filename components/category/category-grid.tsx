@@ -26,9 +26,15 @@ function CategoryCard({ category }: { category: Category }) {
   return (
     <Link
       href={`/category/${category.id}`}
-      className="group flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary"
+      className="group flex flex-col rounded-lg border border-border bg-card transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
     >
-      <div className="relative aspect-video w-full bg-muted">
+      {/*
+        overflow-hidden lives here (the image wrapper), not on the outer
+        Link, so it only clips the image's rounded corners/hover-scale —
+        putting it on the Link itself would also clip its own focus
+        outline, making keyboard focus nearly invisible on this card.
+      */}
+      <div className="relative aspect-video w-full overflow-hidden rounded-t-lg bg-muted">
         {category.image_url ? (
           <Image
             src={category.image_url}

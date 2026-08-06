@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { logoutAction } from "@/components/auth/logout-action";
+import { SearchForm } from "@/components/search-form";
 import type { Category, Webstore } from "@/lib/tebex/types";
 
 export function Header({
@@ -57,6 +58,8 @@ export function Header({
             ))}
           </nav>
 
+          <SearchForm className="hidden w-40 md:block" />
+
           <Link
             href="/cart"
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
@@ -69,28 +72,39 @@ export function Header({
             ) : null}
           </Link>
 
-          {username ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Link href="/account" className="hover:text-foreground">
-                Signed in as {username}
+          {/*
+            Hidden on mobile, not just squeezed — with the store name, cart,
+            and menu toggle already competing for a 375px-wide bar, adding
+            "Signed in as {username}" here caused the store name to wrap
+            mid-word (confirmed in a real mobile-viewport pass). Repeated
+            inside the mobile menu below instead, the same way `links` is
+            already duplicated between the desktop nav and mobile nav rather
+            than extracted — matching this file's existing pattern.
+          */}
+          <div className="hidden items-center gap-4 md:flex">
+            {username ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Link href="/account" className="hover:text-foreground">
+                  Signed in as {username}
+                </Link>
+                <form action={logoutAction}>
+                  <button
+                    type="submit"
+                    className="underline-offset-2 hover:text-foreground hover:underline"
+                  >
+                    Logout
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                Login
               </Link>
-              <form action={logoutAction}>
-                <button
-                  type="submit"
-                  className="underline-offset-2 hover:text-foreground hover:underline"
-                >
-                  Logout
-                </button>
-              </form>
-            </div>
-          ) : (
-            <Link
-              href="/login"
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Login
-            </Link>
-          )}
+            )}
+          </div>
 
           <details className="md:hidden">
             <summary className="cursor-pointer list-none text-sm text-muted-foreground">
@@ -100,6 +114,7 @@ export function Header({
               aria-label="Primary"
               className="absolute inset-x-0 top-full flex flex-col gap-3 border-b border-border bg-card px-6 py-4"
             >
+              <SearchForm />
               {links.map((link) => (
                 <Link
                   key={link.href}
@@ -109,6 +124,33 @@ export function Header({
                   {link.label}
                 </Link>
               ))}
+              <div className="flex items-center justify-between border-t border-border pt-3">
+                {username ? (
+                  <>
+                    <Link
+                      href="/account"
+                      className="text-sm text-muted-foreground hover:text-foreground"
+                    >
+                      Signed in as {username}
+                    </Link>
+                    <form action={logoutAction}>
+                      <button
+                        type="submit"
+                        className="text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                      >
+                        Logout
+                      </button>
+                    </form>
+                  </>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    Login
+                  </Link>
+                )}
+              </div>
             </nav>
           </details>
         </div>

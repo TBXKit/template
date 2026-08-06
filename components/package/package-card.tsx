@@ -18,13 +18,21 @@ export function PackageCard({
   return (
     <Link
       href={`/package/${pkg.id}`}
-      className={`group flex overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary ${
+      className={`group flex rounded-lg border border-border bg-card transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
         isList ? "flex-row items-center" : "flex-col"
       }`}
     >
+      {/*
+        overflow-hidden lives here (the image wrapper), not on the outer
+        Link, so it only clips the image's rounded corners/hover-scale —
+        putting it on the Link itself would also clip its own focus
+        outline, making keyboard focus nearly invisible on this card.
+      */}
       <div
-        className={`relative bg-muted ${
-          isList ? "aspect-square h-24 w-24 shrink-0" : "aspect-square w-full"
+        className={`relative overflow-hidden bg-muted ${
+          isList
+            ? "aspect-square h-24 w-24 shrink-0 rounded-l-lg"
+            : "aspect-square w-full rounded-t-lg"
         }`}
       >
         {pkg.image ? (

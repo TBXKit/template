@@ -6,6 +6,12 @@ import { getCurrentBasket } from "@/lib/tebex/session";
 
 export const metadata: Metadata = {
   title: "Your Basket",
+  // Per-visitor basket contents — never indexable content. Matches
+  // /login, /account, /search; robots.ts itself stays a blanket `allow`
+  // rather than also disallowing these paths, since combining a robots.txt
+  // disallow with a page's own noindex is counterproductive (a disallowed
+  // page can never be crawled, so the crawler never sees the noindex tag).
+  robots: { index: false },
 };
 
 export default async function CartPage() {
