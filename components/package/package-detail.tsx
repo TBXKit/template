@@ -1,8 +1,7 @@
 import Image from "next/image";
-import type { Package } from "@/lib/tebex/types";
+import type { Package, PackageMedia } from "@/lib/tebex/types";
 import { AddToBasketButton } from "./add-to-basket-button";
 import { PackageBadge } from "./package-badge";
-import { PackageGallery } from "./package-gallery";
 import { PackagePrice } from "./package-price";
 
 function formatExpiration(expirationDate: string): string {
@@ -67,5 +66,73 @@ export function PackageDetail({
         )}
       </div>
     </div>
+  );
+}
+
+// Renders pkg.media as a hero image/video plus a thumbnail grid. Only ever
+// used by PackageDetail above (there's no other place in the app that shows
+// a package's media), so it stays a private helper rather than its own export.
+function PackageGallery({
+  media,
+  alt,
+}: {
+  media: PackageMedia[];
+  alt: string;
+}) {
+  const primaryIndex = media.findIndex((item) => item.primary);
+  const heroIndex = primaryIndex === -1 ? 0 : primaryIndex;
+  const hero = media[heroIndex];
+  const rest = media.filter((_, index) => index !== heroIndex);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-muted">
+        <MediaItem
+          item={hero}
+          alt={alt}
+          sizes="(min-width: 768px) 50vw, 100vw"
+        />
+      </div>
+      {rest.length > 0 ? (
+        <div className="grid grid-cols-3 gap-2">
+          {rest.map((item) => (
+            <div
+              key={item.url}
+              className="relative aspect-square w-full overflow-hidden rounded-lg bg-muted"
+            >
+              <MediaItem item={item} alt={alt} sizes="33vw" />
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function MediaItem({
+  item,
+  alt,
+  sizes,
+}: {
+  item: PackageMedia;
+  alt: string;
+  sizes: string;
+}) {
+  if (item.type === "video") {
+    return (
+      // biome-ignore lint/a11y/useMediaCaption: Tebex-supplied media has no caption track available.
+      <video src={item.url} controls className="h-full w-full object-cover" />
+    );
+  }
+
+  return (
+    <Image
+      src={item.url}
+      alt={alt}
+      fill
+      unoptimized
+      sizes={sizes}
+      className="object-cover"
+    />
   );
 }
