@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { BasketEmpty } from "@/components/basket/basket-empty";
-import { BasketSummary } from "@/components/basket/basket-summary";
+import { CheckoutPanel } from "@/components/basket/checkout-panel";
 import { getWebstore } from "@/lib/tebex";
 import { getCurrentBasket } from "@/lib/tebex/session";
 
@@ -21,7 +21,7 @@ export default async function CartPage() {
         {!basket || basket.packages.length === 0 ? (
           <BasketEmpty />
         ) : (
-          <BasketSummary basket={basket} currency={webstore.currency} />
+          <CheckoutPanel basket={basket} currency={webstore.currency} />
         )}
       </div>
     </div>

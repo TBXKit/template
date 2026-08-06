@@ -45,3 +45,15 @@ export async function ensureBasket(): Promise<Basket> {
   });
   return created;
 }
+
+/**
+ * Clears the basket-ident cookie once a basket is done being useful (e.g.
+ * after a completed checkout) so the next add-to-basket call starts a fresh
+ * one. Only callable from a Server Action or Route Handler, same as
+ * `ensureBasket`. Does not touch the basket on Tebex's side — a completed
+ * basket is left as-is; this only stops this visitor from reusing its ident.
+ */
+export async function clearBasketSession(): Promise<void> {
+  const store = await cookies();
+  store.delete(BASKET_COOKIE);
+}
