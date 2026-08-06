@@ -71,7 +71,9 @@ export function Header({
 
           {username ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>Signed in as {username}</span>
+              <Link href="/account" className="hover:text-foreground">
+                Signed in as {username}
+              </Link>
               <form action={logoutAction}>
                 <button
                   type="submit"
