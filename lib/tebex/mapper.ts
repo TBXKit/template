@@ -24,6 +24,9 @@ import type {
   Package,
   PackageMedia,
   PackageType,
+  PackageVariable,
+  PackageVariableOption,
+  PackageVariableType,
   Webstore,
 } from "./types";
 
@@ -138,6 +141,59 @@ function mapPackageMedia(raw: unknown): PackageMedia[] {
     }));
 }
 
+const PACKAGE_VARIABLE_TYPES: readonly PackageVariableType[] = [
+  "dropdown",
+  "text",
+  "numeric",
+  "alpha",
+  "alphanumeric",
+  "username",
+  "email",
+];
+
+function mapPackageVariableType(raw: unknown): PackageVariableType {
+  return PACKAGE_VARIABLE_TYPES.includes(raw as PackageVariableType)
+    ? (raw as PackageVariableType)
+    : "text";
+}
+
+function mapPackageVariableOptions(raw: unknown): PackageVariableOption[] {
+  const items = Array.isArray(raw) ? raw : [];
+
+  return items
+    .filter(isRecord)
+    .filter(
+      (item): item is Record<string, unknown> & { value: string } =>
+        typeof item.value === "string" && item.value.length > 0,
+    )
+    .map((item) => ({
+      name: toRequiredString(item.name, item.value),
+      value: item.value,
+    }));
+}
+
+function mapPackageVariables(raw: unknown): PackageVariable[] {
+  const items = Array.isArray(raw) ? raw : [];
+
+  return items
+    .filter(isRecord)
+    .filter(
+      (item): item is Record<string, unknown> & { identifier: string } =>
+        typeof item.identifier === "string" && item.identifier.length > 0,
+    )
+    .map((item) => {
+      const type = mapPackageVariableType(item.type);
+      return {
+        identifier: item.identifier,
+        type,
+        // Only a dropdown carries selectable options; every other type is a
+        // free-form input with nothing to normalize here.
+        options:
+          type === "dropdown" ? mapPackageVariableOptions(item.options) : [],
+      };
+    });
+}
+
 export function mapPackage(raw: unknown): Package {
   const source = isRecord(raw) ? raw : {};
 
@@ -153,6 +209,8 @@ export function mapPackage(raw: unknown): Package {
     total_price: toFiniteNumber(source.total_price, 0),
     expiration_date: toNullableString(source.expiration_date),
     category: mapPackageCategory(source.category),
+    variables: mapPackageVariables(source.variables),
+    disable_quantity: toBoolean(source.disable_quantity, false),
   };
 }
 

@@ -11,10 +11,11 @@ export type AddToBasketResult =
 export async function addToBasketAction(
   packageId: number,
   quantity = 1,
+  variableData?: Record<string, string>,
 ): Promise<AddToBasketResult> {
   try {
     const basket = await ensureBasket();
-    await addPackageToBasket(basket.ident, packageId, quantity);
+    await addPackageToBasket(basket.ident, packageId, quantity, variableData);
     // Broad on purpose: no route reads basket state yet (that starts in
     // Phase 3), so there's no narrower path to target correctly today.
     revalidatePath("/", "layout");

@@ -111,6 +111,10 @@ export async function addPackageToBasket(
   ident: string,
   packageId: number,
   quantity: number,
+  // Confirmed against Tebex's own docs (unlike the variable metadata shape —
+  // see mapPackageVariables): submitted as `variable_data`, an object keyed
+  // by each variable's `identifier`.
+  variableData?: Record<string, string>,
 ): Promise<Basket> {
   const result = await resolveTebexResponse(
     basketPackageRequest<components["schemas"]["Basket"]>(
@@ -118,7 +122,13 @@ export async function addPackageToBasket(
       {
         method: "POST",
         cache: "no-store",
-        body: JSON.stringify({ package_id: String(packageId), quantity }),
+        body: JSON.stringify({
+          package_id: String(packageId),
+          quantity,
+          ...(variableData && Object.keys(variableData).length > 0
+            ? { variable_data: variableData }
+            : {}),
+        }),
       },
     ),
   );

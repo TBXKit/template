@@ -3,10 +3,10 @@
  * what Tebex's API exposes — they are NOT a mirror of the generated OpenAPI
  * schema (`./generated/schema`), which describes every field Tebex's
  * Headless API can return across baskets, coupons, gift cards, tiers, and
- * more. Fields with no current storefront use (creator metadata, package
- * variables/options, tier/upgrade pricing, dynamic-package internals, basket
- * fields, etc.) are intentionally omitted; add them here only when a feature
- * actually needs them.
+ * more. Fields with no current storefront use (creator metadata,
+ * tier/upgrade pricing, dynamic-package internals, basket fields, etc.) are
+ * intentionally omitted; add them here only when a feature actually needs
+ * them.
  *
  * `lib/tebex/mapper.ts` is the only place that converts generated schema
  * shapes into these types — it fills in a documented default for any field
@@ -45,6 +45,37 @@ export interface PackageMedia {
   primary: boolean;
 }
 
+/**
+ * The store owner-configured type list, per Tebex's dashboard docs and the
+ * Vue reference client — NOT confirmed against the Headless API itself,
+ * which types `Package.variables` as an untyped `unknown[]` and documents no
+ * shape for it. Best-corroborated answer available, not a confirmed one; see
+ * `mapper.ts`'s `mapPackageVariables`.
+ */
+export type PackageVariableType =
+  | "dropdown"
+  | "text"
+  | "numeric"
+  | "alpha"
+  | "alphanumeric"
+  | "username"
+  | "email";
+
+export interface PackageVariableOption {
+  /** Shown to the customer. */
+  name: string;
+  /** Submitted as this variable's value when this option is selected. */
+  value: string;
+}
+
+export interface PackageVariable {
+  /** The key `variable_data` is submitted under when adding this package to a basket. */
+  identifier: string;
+  type: PackageVariableType;
+  /** Only populated when type is "dropdown"; empty for every other type. */
+  options: PackageVariableOption[];
+}
+
 export interface Package extends BaseItem {
   description: string;
   image: string | null;
@@ -58,6 +89,10 @@ export interface Package extends BaseItem {
   /** ISO 8601 date-time the package stops being available, if the store owner set one. */
   expiration_date: string | null;
   category: BaseItem;
+  /** Custom input required at purchase time, configured per package in the Tebex dashboard. Every entry is treated as required. */
+  variables: PackageVariable[];
+  /** True if this package can only ever be added at quantity 1. */
+  disable_quantity: boolean;
 }
 
 export interface BasketPackage extends BaseItem {

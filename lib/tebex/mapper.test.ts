@@ -47,6 +47,21 @@ function buildRawPackage(overrides: Partial<RawPackage> = {}): RawPackage {
     media: [
       { type: "image", url: "https://example.com/media-1.png", primary: true },
     ],
+    // The generated schema types `variables` as `unknown[]` — no shape is
+    // declared, so this fixture (and every variable-shape assumption in
+    // mapper.ts) is a best-corroborated guess, not confirmed against a real
+    // API response. See mapper.ts's `mapPackageVariables` doc comment.
+    variables: [
+      {
+        identifier: "colour",
+        type: "dropdown",
+        options: [
+          { name: "Red", value: "red" },
+          { name: "Blue", value: "blue" },
+        ],
+      },
+    ],
+    disable_quantity: false,
     ...overrides,
   };
 }
@@ -142,6 +157,29 @@ function assertPackageInvariants(pkg: Package): void {
     pkg.expiration_date === null || typeof pkg.expiration_date === "string",
   ).toBe(true);
   assertBaseItemInvariants(pkg.category);
+  expect(typeof pkg.disable_quantity).toBe("boolean");
+  expect(Array.isArray(pkg.variables)).toBe(true);
+  for (const variable of pkg.variables) {
+    expect(typeof variable.identifier).toBe("string");
+    expect(variable.identifier.length).toBeGreaterThan(0);
+    expect([
+      "dropdown",
+      "text",
+      "numeric",
+      "alpha",
+      "alphanumeric",
+      "username",
+      "email",
+    ]).toContain(variable.type);
+    expect(Array.isArray(variable.options)).toBe(true);
+    for (const option of variable.options) {
+      expect(typeof option.name).toBe("string");
+      expect(typeof option.value).toBe("string");
+    }
+    if (variable.type !== "dropdown") {
+      expect(variable.options).toEqual([]);
+    }
+  }
 }
 
 function assertCategoryInvariants(category: Category): void {
@@ -312,6 +350,17 @@ describe("mapPackage", () => {
       total_price: 8,
       expiration_date: "2026-12-31T00:00:00+00:00",
       category: { id: 10, name: "Ranks" },
+      variables: [
+        {
+          identifier: "colour",
+          type: "dropdown",
+          options: [
+            { name: "Red", value: "red" },
+            { name: "Blue", value: "blue" },
+          ],
+        },
+      ],
+      disable_quantity: false,
     });
   });
 
@@ -420,6 +469,184 @@ describe("mapPackage", () => {
     );
 
     expect(result.category).toEqual({ id: 10, name: "" });
+  });
+
+  it("maps a disable_quantity flag through as true", () => {
+    const result = mapPackage(buildRawPackage({ disable_quantity: true }));
+
+    expect(result.disable_quantity).toBe(true);
+  });
+
+  it("maps a missing disable_quantity to false", () => {
+    const result = mapPackage(buildRawPackage({ disable_quantity: undefined }));
+
+    expect(result.disable_quantity).toBe(false);
+  });
+
+  describe("variables", () => {
+    it("maps missing variables to an empty array without throwing", () => {
+      const result = mapPackage(buildRawPackage({ variables: undefined }));
+
+      expect(result.variables).toEqual([]);
+    });
+
+    it("maps empty variables to an empty array", () => {
+      const result = mapPackage(buildRawPackage({ variables: [] }));
+
+      expect(result.variables).toEqual([]);
+    });
+
+    it("drops a variable entry with no identifier", () => {
+      const variables = [
+        { identifier: "colour", type: "text" },
+        { type: "text" }, // no identifier — should be dropped
+      ];
+
+      const result = mapPackage(
+        buildRawPackage({ variables: variables as RawPackage["variables"] }),
+      );
+
+      expect(result.variables).toEqual([
+        { identifier: "colour", type: "text", options: [] },
+      ]);
+    });
+
+    it("drops null and primitive entries within variables instead of crashing", () => {
+      const variables = [
+        { identifier: "colour", type: "text" },
+        null,
+        42,
+        "not a variable",
+        true,
+      ];
+
+      const result = mapPackage(
+        buildRawPackage({ variables: variables as RawPackage["variables"] }),
+      );
+
+      expect(result.variables).toEqual([
+        { identifier: "colour", type: "text", options: [] },
+      ]);
+    });
+
+    it('defaults an unrecognized type to "text" rather than dropping the entry', () => {
+      const variables = [{ identifier: "colour", type: "not-a-real-type" }];
+
+      const result = mapPackage(
+        buildRawPackage({ variables: variables as RawPackage["variables"] }),
+      );
+
+      expect(result.variables).toEqual([
+        { identifier: "colour", type: "text", options: [] },
+      ]);
+    });
+
+    it('defaults a missing type to "text"', () => {
+      const variables = [{ identifier: "colour" }];
+
+      const result = mapPackage(
+        buildRawPackage({ variables: variables as RawPackage["variables"] }),
+      );
+
+      expect(result.variables).toEqual([
+        { identifier: "colour", type: "text", options: [] },
+      ]);
+    });
+
+    it("preserves every documented variable type", () => {
+      const types = [
+        "dropdown",
+        "text",
+        "numeric",
+        "alpha",
+        "alphanumeric",
+        "username",
+        "email",
+      ];
+      const variables = types.map((type) => ({ identifier: type, type }));
+
+      const result = mapPackage(
+        buildRawPackage({ variables: variables as RawPackage["variables"] }),
+      );
+
+      expect(result.variables.map((v) => v.type)).toEqual(types);
+    });
+
+    it("populates options only for a dropdown variable", () => {
+      const variables = [
+        {
+          identifier: "colour",
+          type: "dropdown",
+          options: [{ name: "Red", value: "red" }],
+        },
+        {
+          identifier: "username",
+          type: "username",
+          options: [{ name: "Red", value: "red" }], // ignored — not a dropdown
+        },
+      ];
+
+      const result = mapPackage(
+        buildRawPackage({ variables: variables as RawPackage["variables"] }),
+      );
+
+      expect(result.variables).toEqual([
+        {
+          identifier: "colour",
+          type: "dropdown",
+          options: [{ name: "Red", value: "red" }],
+        },
+        { identifier: "username", type: "username", options: [] },
+      ]);
+    });
+
+    it("drops a dropdown option with no value", () => {
+      const variables = [
+        {
+          identifier: "colour",
+          type: "dropdown",
+          options: [{ name: "Red", value: "red" }, { name: "No value" }],
+        },
+      ];
+
+      const result = mapPackage(
+        buildRawPackage({ variables: variables as RawPackage["variables"] }),
+      );
+
+      expect(result.variables[0].options).toEqual([
+        { name: "Red", value: "red" },
+      ]);
+    });
+
+    it("defaults a dropdown option's missing name to its value", () => {
+      const variables = [
+        {
+          identifier: "colour",
+          type: "dropdown",
+          options: [{ value: "red" }],
+        },
+      ];
+
+      const result = mapPackage(
+        buildRawPackage({ variables: variables as RawPackage["variables"] }),
+      );
+
+      expect(result.variables[0].options).toEqual([
+        { name: "red", value: "red" },
+      ]);
+    });
+
+    it("falls back to an empty array for a malformed (non-array) variables field", () => {
+      for (const malformed of ["a string", 42, {}, true]) {
+        const result = mapPackage(
+          buildRawPackage({
+            variables: malformed as unknown as RawPackage["variables"],
+          }),
+        );
+
+        expect(result.variables).toEqual([]);
+      }
+    });
   });
 });
 
@@ -1054,6 +1281,16 @@ describe("domain invariants under hostile input", () => {
       category: "broken" as unknown as RawPackage["category"],
     }),
     buildRawPackage({ media: "broken" as unknown as RawPackage["media"] }),
+    buildRawPackage({
+      variables: "broken" as unknown as RawPackage["variables"],
+    }),
+    buildRawPackage({
+      variables: [
+        { identifier: "colour", type: "not-a-real-type" },
+        null,
+        42,
+      ] as unknown as RawPackage["variables"],
+    }),
     {} as RawPackage,
   ];
 

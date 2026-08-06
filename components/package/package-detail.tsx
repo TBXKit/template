@@ -51,7 +51,11 @@ export function PackageDetail({
           currency={currency}
           className="mt-2 block text-xl font-medium text-primary"
         />
-        <AddToBasketButton packageId={pkg.id} />
+        <AddToBasketButton
+          packageId={pkg.id}
+          variables={pkg.variables}
+          disableQuantity={pkg.disable_quantity}
+        />
         {pkg.description ? (
           <p className="mt-6 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
             {pkg.description}
