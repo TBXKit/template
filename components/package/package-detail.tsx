@@ -1,7 +1,14 @@
 import Image from "next/image";
 import type { Package } from "@/lib/tebex/types";
 import { PackageBadge } from "./package-badge";
+import { PackageGallery } from "./package-gallery";
 import { PackagePrice } from "./package-price";
+
+function formatExpiration(expirationDate: string): string {
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "long" }).format(
+    new Date(expirationDate),
+  );
+}
 
 export function PackageDetail({
   pkg,
@@ -12,21 +19,30 @@ export function PackageDetail({
 }) {
   return (
     <div className="grid gap-8 md:grid-cols-2">
-      <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-muted">
-        {pkg.image ? (
-          <Image
-            src={pkg.image}
-            alt={pkg.name}
-            fill
-            unoptimized
-            sizes="(min-width: 768px) 50vw, 100vw"
-            className="object-cover"
-          />
-        ) : null}
-      </div>
+      {pkg.media.length > 0 ? (
+        <PackageGallery media={pkg.media} alt={pkg.name} />
+      ) : (
+        <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-muted">
+          {pkg.image ? (
+            <Image
+              src={pkg.image}
+              alt={pkg.name}
+              fill
+              unoptimized
+              sizes="(min-width: 768px) 50vw, 100vw"
+              className="object-cover"
+            />
+          ) : null}
+        </div>
+      )}
       <div>
         <h1 className="text-3xl font-semibold text-foreground">{pkg.name}</h1>
         <PackageBadge type={pkg.type} className="mt-3" />
+        {pkg.expiration_date ? (
+          <p className="mt-2 text-sm text-muted-foreground">
+            Available until {formatExpiration(pkg.expiration_date)}
+          </p>
+        ) : null}
         <PackagePrice
           basePrice={pkg.base_price}
           totalPrice={pkg.total_price}
