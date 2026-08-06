@@ -5,6 +5,7 @@
 // login-form.tsx (a Client Component).
 
 import { redirect } from "next/navigation";
+import { logger } from "@/lib/logger";
 import { setCurrentUsername } from "@/lib/tebex/session";
 import { isSafeRedirectPath } from "./safe-redirect";
 
@@ -18,6 +19,7 @@ export async function loginAction(
   const next = String(formData.get("next") ?? "/");
 
   if (!username) {
+    logger.warn("Login rejected: no username submitted");
     return { success: false, error: "Please enter a username." };
   }
 
@@ -26,5 +28,6 @@ export async function loginAction(
   // validates/creates the identity itself once a basket is created with it
   // (see lib/tebex/index.ts's createBasket).
   await setCurrentUsername(username);
+  logger.info({ username }, "Login succeeded");
   redirect(isSafeRedirectPath(next) ? next : "/");
 }

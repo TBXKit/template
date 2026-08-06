@@ -1,7 +1,16 @@
 import createClient from "openapi-fetch";
+import { logger } from "@/lib/logger";
 import type { paths } from "./generated/schema";
 
 const API_BASE = "https://headless.tebex.io/api";
+
+// The public storefront token is safe to expose (see TEBEX_PUBLIC_TOKEN's
+// own docs), but it still identifies this store's account, so debug logs
+// below redact it from the URL rather than assuming "public" means "fine to
+// repeat in every log line."
+function redactAccountToken(url: string): string {
+  return url.replace(/\/accounts\/[^/]+/, "/accounts/[redacted]");
+}
 
 function accountBaseUrl(): string {
   const token = process.env.TEBEX_PUBLIC_TOKEN;
@@ -82,6 +91,18 @@ export async function resolveTebexResponse<T>(
   notFoundStatuses: number[] = [404],
 ): Promise<T | null> {
   const { data, error, response } = await result;
+
+  // Every Tebex call funnels through here regardless of call site
+  // (tebexClient or basketPackageRequest), so this is the one place that
+  // can log request/response pairs for all of them without duplicating the
+  // same log call at every index.ts function. Deliberately excludes
+  // response bodies (may carry a visitor's username/basket contents) — the
+  // status/URL pair is enough to correlate against a specific failure
+  // without risking a sensitive payload in the logs.
+  logger.debug(
+    { url: redactAccountToken(response.url), status: response.status },
+    "Tebex API request",
+  );
 
   if (notFoundStatuses.includes(response.status)) {
     return null;

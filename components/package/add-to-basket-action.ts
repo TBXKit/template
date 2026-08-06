@@ -7,6 +7,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { logger, redactBasketIdent } from "@/lib/logger";
 import { addPackageToBasket, getPackage, getWebstore } from "@/lib/tebex";
 import { ensureBasket, getEffectiveUsername } from "@/lib/tebex/session";
 
@@ -37,6 +38,10 @@ export async function addToBasketAction(
   if (webstore.supports_usernames || giftUsername) {
     const username = await getEffectiveUsername();
     if (!username) {
+      logger.debug(
+        { packageId, gift: Boolean(giftUsername) },
+        "Redirecting to login before add-to-basket",
+      );
       redirect(`/login?next=${encodeURIComponent(currentPath)}`);
     }
   }
@@ -58,21 +63,48 @@ export async function addToBasketAction(
       variableData,
       giftUsername,
     );
+    logger.info(
+      {
+        basketIdent: redactBasketIdent(basket.ident),
+        packageId,
+        quantity: effectiveQuantity,
+        gift: Boolean(giftUsername),
+      },
+      "Package added to basket",
+    );
     // Broad on purpose: basket state affects the header's item count on
     // every page, not just this action's own route.
     revalidatePath("/", "layout");
     return { success: true };
   } catch (error) {
+    // A gift-target failure carries a specific, actionable message from
+    // Tebex (e.g. "User not found") — worth surfacing exactly, unlike a
+    // plain add's generic fallback, since Phase 8 specifically calls for
+    // a visible, specific error for an unresolvable gift target. That same
+    // distinction sets the log level: an unresolvable gift target is
+    // visitor-caused and recoverable (they can retry with a different
+    // username), while the generic-fallback branch means something wasn't
+    // recognized as safe to explain and deserves a closer look.
+    const giftTargetError =
+      giftUsername && error instanceof Error ? error.message : undefined;
+
+    if (giftTargetError) {
+      logger.warn(
+        { packageId, err: error },
+        "Gift target could not be resolved",
+      );
+    } else {
+      logger.error(
+        { packageId, err: error },
+        "Failed to add package to basket",
+      );
+    }
+
     return {
       success: false,
-      // A gift-target failure carries a specific, actionable message from
-      // Tebex (e.g. "User not found") — worth surfacing exactly, unlike a
-      // plain add's generic fallback, since Phase 8 specifically calls for
-      // a visible, specific error for an unresolvable gift target.
       error:
-        giftUsername && error instanceof Error
-          ? error.message
-          : "Could not add this package to your basket. Please try again.",
+        giftTargetError ??
+        "Could not add this package to your basket. Please try again.",
     };
   }
 }

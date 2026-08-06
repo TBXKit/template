@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { logger, redactBasketIdent } from "@/lib/logger";
 import { createBasket, getBasket } from "./index";
 import type { Basket } from "./types";
 
@@ -41,6 +42,14 @@ export async function ensureBasket(): Promise<Basket> {
   if (ident) {
     const existing = await getBasket(ident);
     if (existing) return existing;
+    // The cookie pointed at an ident Tebex no longer recognizes (expired or
+    // otherwise gone) — falling through to create a fresh one is the
+    // intended, transparent recovery, not an error, but worth a debug trace
+    // since it explains why a visitor's basket ident changed mid-session.
+    logger.debug(
+      { basketIdent: redactBasketIdent(ident) },
+      "Basket cookie pointed at an expired/missing basket; creating a new one",
+    );
   }
 
   // Attaches a known username (if the visitor already logged in via
@@ -51,6 +60,10 @@ export async function ensureBasket(): Promise<Basket> {
   // mechanical "use it if we have it" half.
   const username = store.get(USERNAME_COOKIE)?.value;
   const created = await createBasket(username);
+  logger.info(
+    { basketIdent: redactBasketIdent(created.ident), username },
+    "Basket created",
+  );
   store.set(BASKET_COOKIE, created.ident, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

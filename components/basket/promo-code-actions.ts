@@ -8,6 +8,7 @@
 // *different* trigger components.
 
 import { revalidatePath } from "next/cache";
+import { logger, redactBasketIdent } from "@/lib/logger";
 import {
   applyCoupon,
   applyCreatorCode,
@@ -26,8 +27,12 @@ export type PromoCodeResult =
 // this surfaces the underlying error's own message: `lib/tebex/client.ts`
 // now extracts Tebex's own `detail` text (e.g. "The selected coupon code is
 // invalid.") for exactly this reason — Phase 6 specifically requires a
-// *specific* visible error, not just "something went wrong."
+// *specific* visible error, not just "something went wrong." That same
+// guarantee (Tebex's `detail` is always written to be visitor-safe) is why
+// a caught error here logs at `warn`, not `error`: it's expected,
+// recoverable, visitor-caused input, not a system failure.
 async function runPromoCodeAction(
+  event: string,
   mutate: (ident: string) => Promise<unknown>,
 ): Promise<PromoCodeResult> {
   try {
@@ -36,11 +41,16 @@ async function runPromoCodeAction(
       throw new Error("No basket to apply this to");
     }
     await mutate(basket.ident);
+    logger.info(
+      { basketIdent: redactBasketIdent(basket.ident), event },
+      "Promo code updated",
+    );
     // Broad on purpose — see add-to-basket-action.ts: basket state affects
     // the header's item count and total on every page, not just /cart.
     revalidatePath("/", "layout");
     return { success: true };
   } catch (error) {
+    logger.warn({ event, err: error }, "Promo code action failed");
     return {
       success: false,
       error:
@@ -54,33 +64,45 @@ async function runPromoCodeAction(
 export async function applyCouponAction(
   code: string,
 ): Promise<PromoCodeResult> {
-  return runPromoCodeAction((ident) => applyCoupon(ident, code));
+  return runPromoCodeAction("coupon.apply", (ident) =>
+    applyCoupon(ident, code),
+  );
 }
 
 export async function removeCouponAction(
   code: string,
 ): Promise<PromoCodeResult> {
-  return runPromoCodeAction((ident) => removeCoupon(ident, code));
+  return runPromoCodeAction("coupon.remove", (ident) =>
+    removeCoupon(ident, code),
+  );
 }
 
 export async function applyGiftCardAction(
   cardNumber: string,
 ): Promise<PromoCodeResult> {
-  return runPromoCodeAction((ident) => applyGiftCard(ident, cardNumber));
+  return runPromoCodeAction("gift-card.apply", (ident) =>
+    applyGiftCard(ident, cardNumber),
+  );
 }
 
 export async function removeGiftCardAction(
   cardNumber: string,
 ): Promise<PromoCodeResult> {
-  return runPromoCodeAction((ident) => removeGiftCard(ident, cardNumber));
+  return runPromoCodeAction("gift-card.remove", (ident) =>
+    removeGiftCard(ident, cardNumber),
+  );
 }
 
 export async function applyCreatorCodeAction(
   code: string,
 ): Promise<PromoCodeResult> {
-  return runPromoCodeAction((ident) => applyCreatorCode(ident, code));
+  return runPromoCodeAction("creator-code.apply", (ident) =>
+    applyCreatorCode(ident, code),
+  );
 }
 
 export async function removeCreatorCodeAction(): Promise<PromoCodeResult> {
-  return runPromoCodeAction((ident) => removeCreatorCode(ident));
+  return runPromoCodeAction("creator-code.remove", (ident) =>
+    removeCreatorCode(ident),
+  );
 }

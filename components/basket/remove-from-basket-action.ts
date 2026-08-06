@@ -4,6 +4,7 @@
 // these functions callable as server-side RPCs from a Client Component.
 
 import { revalidatePath } from "next/cache";
+import { logger, redactBasketIdent } from "@/lib/logger";
 import { removePackageFromBasket } from "@/lib/tebex";
 import { getCurrentBasket } from "@/lib/tebex/session";
 
@@ -21,11 +22,19 @@ export async function removeFromBasketAction(
     }
 
     await removePackageFromBasket(basket.ident, packageId);
+    logger.info(
+      { basketIdent: redactBasketIdent(basket.ident), packageId },
+      "Package removed from basket",
+    );
     // Broad on purpose — see add-to-basket-action.ts: basket state affects
     // the header's item count on every page, not just /cart.
     revalidatePath("/", "layout");
     return { success: true };
-  } catch {
+  } catch (error) {
+    logger.error(
+      { packageId, err: error },
+      "Failed to remove package from basket",
+    );
     return {
       success: false,
       error: "Could not remove this item. Please try again.",

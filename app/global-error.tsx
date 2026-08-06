@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import "./globals.css";
+import { logClientErrorAction } from "./log-client-error-action";
 
 // Only fires for errors thrown by the root layout (app/layout.tsx) itself —
 // error.tsx can't catch those, since it renders *inside* that layout. This
@@ -15,7 +16,11 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    logClientErrorAction({
+      message: error.message,
+      digest: error.digest,
+      boundary: "root",
+    });
   }, [error]);
 
   return (

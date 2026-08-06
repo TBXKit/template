@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { logClientErrorAction } from "./log-client-error-action";
 
 // Catches errors thrown while rendering any route below the root layout.
 // Errors thrown by the root layout itself skip this and hit
@@ -13,7 +14,11 @@ export default function RouteError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    logClientErrorAction({
+      message: error.message,
+      digest: error.digest,
+      boundary: "route",
+    });
   }, [error]);
 
   return (
