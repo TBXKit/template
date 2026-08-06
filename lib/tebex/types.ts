@@ -95,7 +95,7 @@ export interface PackageVariable {
 export interface Package extends BaseItem {
   description: string;
   image: string | null;
-  /** Additional images/video beyond `image`. Not currently rendered by any component. */
+  /** Additional images/video beyond `image`, rendered as a gallery on the package detail page — see the private `PackageGallery` in `components/package/package-detail.tsx`. */
   media: PackageMedia[];
   type: PackageType;
   base_price: number;

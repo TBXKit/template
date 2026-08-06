@@ -163,7 +163,19 @@ export async function addPackageToBasket(
   // client's `ident.tebex.io` usage might suggest. Tebex resolves it
   // server-side and throws a 422 with a specific "User not found"-style
   // detail if it can't (surfaced via resolveTebexResponse's error handling).
+  // Per Tebex's docs, this is the field required specifically for
+  // Bedrock/Geyser stores — see `targetUsernameId`'s doc comment below and
+  // `API_QUIRKS.md`. Live-verified working against this project's connected
+  // store; that store's exact platform is unconfirmed.
   targetUsername?: string,
+  // Per Tebex's docs (guides/baskets/gifting-packages), the preferred field
+  // for standard (e.g. Java Edition) stores: a platform identifier such as a
+  // Minecraft UUID or Steam ID, rather than a plain username. Added for
+  // completeness at this layer; not currently wired to any UI input — this
+  // project has no live standard-vs-Bedrock/Geyser store pair to verify
+  // which stores should collect this instead of `targetUsername`, and
+  // guessing risks silently misrouting a real gift. See `API_QUIRKS.md`.
+  targetUsernameId?: string,
 ): Promise<Basket> {
   const result = await resolveTebexResponse(
     basketPackageRequest<components["schemas"]["Basket"]>(
@@ -177,7 +189,11 @@ export async function addPackageToBasket(
           ...(variableData && Object.keys(variableData).length > 0
             ? { variable_data: variableData }
             : {}),
-          ...(targetUsername ? { target_username: targetUsername } : {}),
+          ...(targetUsernameId
+            ? { target_username_id: targetUsernameId }
+            : targetUsername
+              ? { target_username: targetUsername }
+              : {}),
         }),
       },
     ),

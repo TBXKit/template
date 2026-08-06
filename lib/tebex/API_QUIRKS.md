@@ -75,13 +75,31 @@ it actually matters when you're changing that code.
   regardless of which shape actually arrives. See `mapper.ts`.
 - **Gifting needs no separate resolution step or third-party proxy** —
   confirmed against Tebex's own docs (`guides/baskets/gifting-packages`)
-  and a live gift add: include `target_username` (or `target_username_id`,
-  required instead for Bedrock/Geyser) directly in the *same*
-  add-to-basket request as `package_id`/`quantity`; Tebex resolves it
-  server-side. Neither field is declared in the generated schema's
-  `addBasketPackage` requestBody (same gap as `variable_data`). An
+  and a live gift add: include `target_username` or `target_username_id`
+  directly in the *same* add-to-basket request as `package_id`/`quantity`;
+  Tebex resolves it server-side. Neither field is declared in the generated
+  schema's `addBasketPackage` requestBody (same gap as `variable_data`). An
   unresolvable target 400s with a specific `"User not found"`-style
   `detail`. See `addPackageToBasket`'s doc comment in `lib/tebex/index.ts`.
+  **Correction (previously stated backwards in this file):** per Tebex's
+  docs, `target_username_id` — a platform identifier such as a Minecraft
+  UUID or Steam ID — is the field for standard (e.g. Java Edition) stores;
+  `target_username` (a plain username) is the one *required instead* for
+  Bedrock/Geyser stores, "due to differences in player IDs between
+  Minecraft: Java Edition and Minecraft: Bedrock Edition." This project
+  currently only sends `target_username` (a plain "Recipient's username"
+  text field), which is live-verified working against this project's
+  connected store (a real gift to a real Minecraft username succeeded) —
+  but that store's exact platform, and therefore whether `target_username`
+  is merely tolerated there versus how a genuine Bedrock/Geyser store
+  behaves, is unconfirmed. `target_username_id` support now exists at the
+  `lib/tebex/index.ts` layer (`addPackageToBasket`'s `targetUsernameId`
+  parameter) but is not wired into the UI: this project has no live
+  Bedrock/Geyser-vs-standard store pair to verify which `Webstore.platform_type`
+  string values, if any, should trigger switching the recipient input from
+  a username to a platform ID, and guessing that string match risks
+  silently misrouting a real gift. Deliberately left unverified/unwired
+  rather than guessed — see `ROADMAP.md`'s Phase 8.1 Known Unknowns entry.
 - **`Webstore.supports_gifting` isn't enforced by the API** — confirmed
   live: a store with it `false` (gifting off in **Settings → Checkout**)
   still accepted and correctly resolved a `target_username`. This

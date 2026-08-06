@@ -7,7 +7,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { addPackageToBasket, getWebstore } from "@/lib/tebex";
+import { addPackageToBasket, getPackage, getWebstore } from "@/lib/tebex";
 import { ensureBasket, getEffectiveUsername } from "@/lib/tebex/session";
 
 export type AddToBasketResult =
@@ -42,11 +42,19 @@ export async function addToBasketAction(
   }
 
   try {
+    // The UI never lets a visitor submit anything but 1 when the package
+    // disables quantity selection, but the Server Action itself is a public
+    // RPC endpoint — a direct call bypassing the form (or a tampered client
+    // bundle) could submit any value. Re-check server-side rather than
+    // trusting the client's `quantity` unconditionally.
+    const pkg = await getPackage(packageId);
+    const effectiveQuantity = pkg?.disable_quantity ? 1 : quantity;
+
     const basket = await ensureBasket();
     await addPackageToBasket(
       basket.ident,
       packageId,
-      quantity,
+      effectiveQuantity,
       variableData,
       giftUsername,
     );

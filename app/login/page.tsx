@@ -3,6 +3,7 @@ import { LoginForm } from "@/components/auth/login-form";
 import { SITE_URL } from "@/lib/site";
 import { getBasketAuthProviders, getWebstore } from "@/lib/tebex";
 import { getCurrentBasket } from "@/lib/tebex/session";
+import { startSignInAction } from "./ensure-basket-action";
 import { isSafeRedirectPath } from "./safe-redirect";
 
 export const metadata: Metadata = {
@@ -45,11 +46,24 @@ async function ExternalProviderLinks({ next }: { next: string }) {
     // (unlike the username flow, which needs one created with the username
     // already attached) — nothing to authorize yet if the visitor hasn't
     // added anything. Reachable if a visitor opens /login directly (e.g.
-    // from the header) rather than being redirected here mid-add.
+    // from the header), or is redirected here as their very first action
+    // (e.g. attempting to gift a package before adding anything else) —
+    // that second case used to be a dead end with no actual sign-in
+    // affordance, since signing in was exactly what triggered the redirect.
+    // `startSignInAction` creates an anonymous basket server-side so this
+    // page can re-render with real provider links below.
     return (
-      <p className="mt-2 text-sm text-muted-foreground">
-        Add something to your basket first, then sign in from checkout.
-      </p>
+      <form action={startSignInAction.bind(null, next)} className="mt-4">
+        <p className="text-sm text-muted-foreground">
+          Sign-in is tied to your basket on this store — continue to start one.
+        </p>
+        <button
+          type="submit"
+          className="mt-3 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary"
+        >
+          Continue to sign in
+        </button>
+      </form>
     );
   }
 

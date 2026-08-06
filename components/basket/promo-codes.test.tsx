@@ -156,6 +156,35 @@ describe("PromoCodes — gift cards (multi-entry)", () => {
       expect(applyGiftCardAction).toHaveBeenCalledWith("1111 2222");
     });
   });
+
+  it("shows the specific error message when applying a gift card fails", async () => {
+    applyGiftCardAction.mockResolvedValueOnce({
+      success: false,
+      error: "Gift card not found",
+    });
+    render(<PromoCodes basket={buildBasket()} />);
+
+    const input = screen.getByLabelText("Gift card number");
+    fireEvent.change(input, { target: { value: "0000 0000" } });
+    fireEvent.click(applyButtonFor(input));
+
+    expect(await screen.findByText("Gift card not found")).toBeInTheDocument();
+  });
+
+  it("removes a gift card by its card number", async () => {
+    removeGiftCardAction.mockResolvedValueOnce({ success: true });
+    render(
+      <PromoCodes
+        basket={buildBasket({ giftcards: [{ card_number: "1234 5678" }] })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+
+    await waitFor(() => {
+      expect(removeGiftCardAction).toHaveBeenCalledWith("1234 5678");
+    });
+  });
 });
 
 describe("PromoCodes — creator code (single-entry, replaces rather than lists)", () => {
@@ -194,5 +223,21 @@ describe("PromoCodes — creator code (single-entry, replaces rather than lists)
     await waitFor(() => {
       expect(applyCreatorCodeAction).toHaveBeenCalledWith("MyCreator");
     });
+  });
+
+  it("shows the specific error message when applying a creator code fails", async () => {
+    applyCreatorCodeAction.mockResolvedValueOnce({
+      success: false,
+      error: "Creator code not found",
+    });
+    render(<PromoCodes basket={buildBasket()} />);
+
+    const input = screen.getByLabelText("Creator code");
+    fireEvent.change(input, { target: { value: "FakeCreator" } });
+    fireEvent.click(applyButtonFor(input));
+
+    expect(
+      await screen.findByText("Creator code not found"),
+    ).toBeInTheDocument();
   });
 });
