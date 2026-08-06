@@ -2,7 +2,7 @@
 
 A customizable storefront theme for [Tebex](https://tebex.io) stores, built on Next.js 16 (App Router) and Tailwind v4. It renders your store's categories and packages from the [Tebex Headless API](https://docs.tebex.io/developers/headless-api/overview) — browse categories, browse packages, view package details. It's meant to be forked and reskinned per store, not used as a multi-tenant product.
 
-There is currently no basket/checkout flow; this is a browse-only storefront foundation.
+The current release is browse-only (categories, packages, package detail). Basket, checkout, authentication, gifting, coupons/gift cards/creator codes, and account/purchase history are planned.
 
 ## Getting started
 
