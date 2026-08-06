@@ -156,6 +156,14 @@ export async function addPackageToBasket(
   // see mapPackageVariables): submitted as `variable_data`, an object keyed
   // by each variable's `identifier`.
   variableData?: Record<string, string>,
+  // Confirmed against Tebex's own docs (guides/baskets/gifting-packages):
+  // submitted as `target_username` alongside `package_id`/`quantity` on this
+  // same request — there is no separate username-to-identity resolution
+  // endpoint or third-party proxy involved, despite what the reference
+  // client's `ident.tebex.io` usage might suggest. Tebex resolves it
+  // server-side and throws a 422 with a specific "User not found"-style
+  // detail if it can't (surfaced via resolveTebexResponse's error handling).
+  targetUsername?: string,
 ): Promise<Basket> {
   const result = await resolveTebexResponse(
     basketPackageRequest<components["schemas"]["Basket"]>(
@@ -169,6 +177,7 @@ export async function addPackageToBasket(
           ...(variableData && Object.keys(variableData).length > 0
             ? { variable_data: variableData }
             : {}),
+          ...(targetUsername ? { target_username: targetUsername } : {}),
         }),
       },
     ),

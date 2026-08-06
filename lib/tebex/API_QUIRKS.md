@@ -73,6 +73,22 @@ it actually matters when you're changing that code.
   declares — confirmed live: a store with no external providers configured
   returns `[[]]`, not `[]`. `mapAuthProviders` unwraps this defensively
   regardless of which shape actually arrives. See `mapper.ts`.
+- **Gifting needs no separate resolution step or third-party proxy** —
+  confirmed against Tebex's own docs (`guides/baskets/gifting-packages`)
+  and a live gift add: include `target_username` (or `target_username_id`,
+  required instead for Bedrock/Geyser) directly in the *same*
+  add-to-basket request as `package_id`/`quantity`; Tebex resolves it
+  server-side. Neither field is declared in the generated schema's
+  `addBasketPackage` requestBody (same gap as `variable_data`). An
+  unresolvable target 400s with a specific `"User not found"`-style
+  `detail`. See `addPackageToBasket`'s doc comment in `lib/tebex/index.ts`.
+- **`Webstore.supports_gifting` isn't enforced by the API** — confirmed
+  live: a store with it `false` (gifting off in **Settings → Checkout**)
+  still accepted and correctly resolved a `target_username`. This
+  storefront still gates the gift UI on it (and on the per-package
+  `disable_gifting`) as a deliberate choice to honor the store owner's
+  dashboard setting, not because Tebex requires it. See
+  `components/package/package-detail.tsx`.
 
 If you find a new mismatch, add it here as a one-line pointer and document the
 full reasoning inline at the point it's handled — the same pattern every entry

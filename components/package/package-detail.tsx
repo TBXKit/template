@@ -13,9 +13,12 @@ function formatExpiration(expirationDate: string): string {
 export function PackageDetail({
   pkg,
   currency,
+  supportsGifting = false,
 }: {
   pkg: Package;
   currency: string;
+  /** `webstore.supports_gifting` — see AddToBasketButton's `canGift` doc comment. */
+  supportsGifting?: boolean;
 }) {
   return (
     <div className="grid gap-8 md:grid-cols-2">
@@ -54,6 +57,7 @@ export function PackageDetail({
           packageId={pkg.id}
           variables={pkg.variables}
           disableQuantity={pkg.disable_quantity}
+          canGift={supportsGifting && !pkg.disable_gifting}
         />
         {pkg.description ? (
           <p className="mt-6 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">

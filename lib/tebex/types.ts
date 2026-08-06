@@ -35,7 +35,15 @@ export interface Webstore {
    * `username`. See `lib/tebex/session.ts` and `app/login/`.
    */
   supports_usernames: boolean;
-  /** True if the store has gifting enabled. */
+  /**
+   * True if the store owner has "Allow Gifting" enabled (Settings →
+   * Checkout in the Tebex dashboard). This storefront treats it as the
+   * gate for showing the gift option at all — confirmed against a live
+   * store that the add-to-basket API itself does *not* enforce it
+   * server-side (a `target_username` was accepted and resolved even with
+   * this flag `false`), so respecting it here is a deliberate choice to
+   * honor the store owner's dashboard setting, not something Tebex forces.
+   */
   supports_gifting: boolean;
 }
 
@@ -101,6 +109,12 @@ export interface Package extends BaseItem {
   variables: PackageVariable[];
   /** True if this package can only ever be added at quantity 1. */
   disable_quantity: boolean;
+  /**
+   * True if this specific package can't be gifted, even when the store
+   * overall has gifting enabled (`Webstore.supports_gifting`). Both must be
+   * checked — see `components/package/add-to-basket-button.tsx`.
+   */
+  disable_gifting: boolean;
 }
 
 export interface BasketPackage extends BaseItem {

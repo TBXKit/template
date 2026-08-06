@@ -212,6 +212,7 @@ export function mapPackage(raw: unknown): Package {
     category: mapPackageCategory(source.category),
     variables: mapPackageVariables(source.variables),
     disable_quantity: toBoolean(source.disable_quantity, false),
+    disable_gifting: toBoolean(source.disable_gifting, false),
   };
 }
 

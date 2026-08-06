@@ -68,6 +68,7 @@ function buildRawPackage(overrides: Partial<RawPackage> = {}): RawPackage {
       },
     ],
     disable_quantity: false,
+    disable_gifting: false,
     ...overrides,
   };
 }
@@ -165,6 +166,7 @@ function assertPackageInvariants(pkg: Package): void {
   ).toBe(true);
   assertBaseItemInvariants(pkg.category);
   expect(typeof pkg.disable_quantity).toBe("boolean");
+  expect(typeof pkg.disable_gifting).toBe("boolean");
   expect(Array.isArray(pkg.variables)).toBe(true);
   for (const variable of pkg.variables) {
     expect(typeof variable.identifier).toBe("string");
@@ -371,6 +373,7 @@ describe("mapPackage", () => {
         },
       ],
       disable_quantity: false,
+      disable_gifting: false,
     });
   });
 
@@ -491,6 +494,18 @@ describe("mapPackage", () => {
     const result = mapPackage(buildRawPackage({ disable_quantity: undefined }));
 
     expect(result.disable_quantity).toBe(false);
+  });
+
+  it("maps a disable_gifting flag through as true", () => {
+    const result = mapPackage(buildRawPackage({ disable_gifting: true }));
+
+    expect(result.disable_gifting).toBe(true);
+  });
+
+  it("maps a missing disable_gifting to false", () => {
+    const result = mapPackage(buildRawPackage({ disable_gifting: undefined }));
+
+    expect(result.disable_gifting).toBe(false);
   });
 
   describe("variables", () => {

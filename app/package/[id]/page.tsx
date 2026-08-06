@@ -53,7 +53,11 @@ export default async function PackagePage({
           { label: pkg.name },
         ]}
       />
-      <PackageDetail pkg={pkg} currency={webstore.currency} />
+      <PackageDetail
+        pkg={pkg}
+        currency={webstore.currency}
+        supportsGifting={webstore.supports_gifting}
+      />
     </div>
   );
 }

@@ -74,6 +74,18 @@ export async function getCurrentUsername(): Promise<string | null> {
 }
 
 /**
+ * Read-only: safe anywhere. The one signal for "is this visitor logged in"
+ * — prefers `basket.username` (authoritative once a basket exists) and
+ * falls back to the pre-basket cookie otherwise. Used by both
+ * `app/layout.tsx` (header state) and the gift-gating check in
+ * `components/package/add-to-basket-action.ts`.
+ */
+export async function getEffectiveUsername(): Promise<string | null> {
+  const basket = await getCurrentBasket();
+  return basket?.username ?? getCurrentUsername();
+}
+
+/**
  * Only callable from a Server Action or Route Handler. Called once by the
  * login form's Server Action; `ensureBasket` picks it up the next time a
  * basket actually needs creating.

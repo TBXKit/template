@@ -35,6 +35,7 @@ function makePackage(media: PackageMedia[]): Package {
     category: { id: 1, name: "Category" },
     variables: [],
     disable_quantity: false,
+    disable_gifting: false,
   };
 }
 
