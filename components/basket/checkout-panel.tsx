@@ -1,31 +1,11 @@
 "use client";
 
+import { checkout } from "@tebexio/tebex.js";
 import { useRouter } from "next/navigation";
-import Script from "next/script";
 import { useRef, useState } from "react";
 import type { Basket } from "@/lib/tebex/types";
 import { BasketSummary } from "./basket-summary";
 import { completeCheckoutAction } from "./checkout-action";
-
-// Tebex.js attaches itself to `window.Tebex` once loaded; not published as a
-// types package, so the shape used by this file is declared locally.
-declare global {
-  interface Window {
-    Tebex?: {
-      checkout: {
-        init: (config: {
-          ident: string;
-          theme?: "light" | "dark" | "auto" | "default";
-        }) => void;
-        launch: () => void;
-        on: (
-          event: "payment:complete" | "payment:error" | "close",
-          callback: () => void,
-        ) => void;
-      };
-    };
-  }
-}
 
 /**
  * Wraps the basket summary with the Tebex.js checkout overlay and the
@@ -33,6 +13,17 @@ declare global {
  * reacting to the Tebex.js overlay is unavoidably interactive (per
  * AGENTS.md's Client Component convention) — `BasketSummary` itself stays a
  * plain, presentational component and is simply rendered from here.
+ *
+ * Uses the `@tebexio/tebex.js` npm package rather than the CDN `<script>`
+ * tag Tebex's docs also offer: it's the same library (confirmed against a
+ * live checkout launch — its bundle includes the identical `zoid`-based
+ * component), but ships real types and a plain ESM import instead of a
+ * `window.Tebex` global, which fits this codebase's conventions better and
+ * avoids a manual "has the script loaded yet" readiness gate. Importing it
+ * has no import-time side effects (verified: it loads cleanly under plain
+ * Node with no `window`/`document`), so it's safe from this Client
+ * Component even though Next.js also renders Client Components on the
+ * server for the initial HTML.
  */
 export function CheckoutPanel({
   basket,
@@ -42,7 +33,6 @@ export function CheckoutPanel({
   currency: string;
 }) {
   const router = useRouter();
-  const [scriptReady, setScriptReady] = useState(false);
   const [complete, setComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Mirrors `complete` but readable synchronously from inside the Tebex.js
@@ -52,28 +42,27 @@ export function CheckoutPanel({
   const initializedRef = useRef(false);
 
   function initCheckout() {
-    const tebex = window.Tebex;
-    if (!tebex || initializedRef.current) return;
+    if (initializedRef.current) return;
     initializedRef.current = true;
 
     // "auto" matches this store's own light/dark theming (see
     // themes/default.css) rather than forcing one look regardless of the
     // visitor's system preference.
-    tebex.checkout.init({ ident: basket.ident, theme: "auto" });
+    checkout.init({ ident: basket.ident, theme: "auto" });
 
-    tebex.checkout.on("payment:complete", () => {
+    checkout.on("payment:complete", () => {
       completeRef.current = true;
       setComplete(true);
       completeCheckoutAction().then(() => router.refresh());
     });
 
-    tebex.checkout.on("payment:error", () => {
+    checkout.on("payment:error", () => {
       setError(
         "There was a problem processing your payment. Please try again.",
       );
     });
 
-    tebex.checkout.on("close", () => {
+    checkout.on("close", () => {
       // A coupon or other basket-affecting action may have happened inside
       // the overlay even without a completed payment, so re-fetch rather
       // than assume the basket is unchanged. Skipped once payment has
@@ -88,7 +77,7 @@ export function CheckoutPanel({
 
   function handleCheckout() {
     initCheckout();
-    window.Tebex?.checkout.launch();
+    checkout.launch();
   }
 
   if (complete) {
@@ -106,18 +95,12 @@ export function CheckoutPanel({
 
   return (
     <div>
-      <Script
-        src="https://js.tebex.io/v/1.js"
-        strategy="afterInteractive"
-        onReady={() => setScriptReady(true)}
-      />
       <BasketSummary basket={basket} currency={currency} />
       <div className="mt-6 flex flex-col items-end gap-2">
         <button
           type="button"
           onClick={handleCheckout}
-          disabled={!scriptReady}
-          className="rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           Checkout
         </button>
