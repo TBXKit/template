@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 import type { Basket } from "@/lib/tebex/types";
 import { BasketSummary } from "./basket-summary";
 import { completeCheckoutAction } from "./checkout-action";
+import { PromoCodes } from "./promo-codes";
 
 /**
  * Wraps the basket summary with the Tebex.js checkout overlay and the
@@ -96,6 +97,7 @@ export function CheckoutPanel({
   return (
     <div>
       <BasketSummary basket={basket} currency={currency} />
+      <PromoCodes basket={basket} />
       <div className="mt-6 flex flex-col items-end gap-2">
         <button
           type="button"

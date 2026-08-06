@@ -159,3 +159,116 @@ export async function removePackageFromBasket(
   }
   return mapBasket(result);
 }
+
+// Unlike the basket-packages endpoints above, coupons/gift cards/creator
+// codes ARE correctly account-scoped as the generated schema declares —
+// confirmed against a live store — so these go through `tebexClient()`'s
+// typed POST like every other non-basket-package call in this file.
+//
+// None of the six apply/remove responses below include the updated basket
+// (they're a bare `{success, message}` envelope, confirmed against a live
+// store even for the three "remove" endpoints the generated schema types as
+// having no response content at all) — so each one re-fetches the basket via
+// `getBasket` afterwards, matching what `addPackageToBasket`/
+// `removePackageFromBasket` return directly.
+async function refreshBasketAfter(
+  ident: string,
+  action: string,
+): Promise<Basket> {
+  const basket = await getBasket(ident);
+  if (!basket) {
+    throw new Error(`Basket not found after ${action}`);
+  }
+  return basket;
+}
+
+export async function applyCoupon(
+  ident: string,
+  code: string,
+): Promise<Basket> {
+  const { POST } = tebexClient();
+  await resolveTebexResponse(
+    POST("/baskets/{basketIdent}/coupons", {
+      ...NO_STORE_OPTIONS,
+      params: { path: { basketIdent: ident } },
+      body: { coupon_code: code },
+    }),
+  );
+  return refreshBasketAfter(ident, "applying coupon");
+}
+
+export async function removeCoupon(
+  ident: string,
+  code: string,
+): Promise<Basket> {
+  const { POST } = tebexClient();
+  await resolveTebexResponse(
+    POST("/baskets/{basketIdent}/coupons/remove", {
+      ...NO_STORE_OPTIONS,
+      params: { path: { basketIdent: ident } },
+      body: { coupon_code: code },
+    }),
+  );
+  return refreshBasketAfter(ident, "removing coupon");
+}
+
+export async function applyGiftCard(
+  ident: string,
+  cardNumber: string,
+): Promise<Basket> {
+  const { POST } = tebexClient();
+  await resolveTebexResponse(
+    POST("/baskets/{basketIdent}/giftcards", {
+      ...NO_STORE_OPTIONS,
+      params: { path: { basketIdent: ident } },
+      body: { card_number: cardNumber },
+    }),
+  );
+  return refreshBasketAfter(ident, "applying gift card");
+}
+
+export async function removeGiftCard(
+  ident: string,
+  cardNumber: string,
+): Promise<Basket> {
+  const { POST } = tebexClient();
+  await resolveTebexResponse(
+    POST("/baskets/{basketIdent}/giftcards/remove", {
+      ...NO_STORE_OPTIONS,
+      params: { path: { basketIdent: ident } },
+      body: { card_number: cardNumber },
+    }),
+  );
+  return refreshBasketAfter(ident, "removing gift card");
+}
+
+// A basket only ever has one active creator code at a time — confirmed by
+// this project's own domain type (`Basket.creator_code: string | null`, not
+// an array) — so applying a new one replaces rather than adds to the
+// existing one; components/basket UI reflects that instead of treating it
+// like the (multi-entry) coupon/gift-card lists.
+export async function applyCreatorCode(
+  ident: string,
+  code: string,
+): Promise<Basket> {
+  const { POST } = tebexClient();
+  await resolveTebexResponse(
+    POST("/baskets/{basketIdent}/creator-codes", {
+      ...NO_STORE_OPTIONS,
+      params: { path: { basketIdent: ident } },
+      body: { creator_code: code },
+    }),
+  );
+  return refreshBasketAfter(ident, "applying creator code");
+}
+
+export async function removeCreatorCode(ident: string): Promise<Basket> {
+  const { POST } = tebexClient();
+  await resolveTebexResponse(
+    POST("/baskets/{basketIdent}/creator-codes/remove", {
+      ...NO_STORE_OPTIONS,
+      params: { path: { basketIdent: ident } },
+    }),
+  );
+  return refreshBasketAfter(ident, "removing creator code");
+}

@@ -37,6 +37,26 @@ it actually matters when you're changing that code.
   The type list in `lib/tebex/types.ts` (`PackageVariableType`) is a
   best-corroborated guess from Tebex's dashboard docs, not a confirmed
   contract. See the doc comment above `PackageVariableType`.
+- **Coupon/gift card/creator code endpoints, unlike basket-packages, *are*
+  correctly account-scoped** as the generated schema declares — confirmed
+  against a live store. They go through `tebexClient()`'s typed `POST`
+  rather than `basketPackageRequest`'s bare-API-root workaround. All six
+  return a bare `{success, message}` envelope (never the updated basket,
+  even the three "remove" endpoints the schema types as having no response
+  content at all — confirmed they return real JSON regardless), so
+  `lib/tebex/index.ts` re-fetches via `getBasket` after each one. See
+  `refreshBasketAfter` in `lib/tebex/index.ts`.
+- **An invalid coupon/gift card/creator code returns `422` with a specific,
+  user-safe `detail` message** (e.g. `"The selected coupon code is
+  invalid."`), consistently across all six apply/remove endpoints — unlike
+  categories/packages, which each use a different non-standard "not found"
+  status. `resolveTebexResponse` (`client.ts`) now extracts this `detail`
+  and throws with it instead of a generic message, since Phase 6 needs to
+  surface it directly to the visitor. Add a store's own login requirement
+  before this: `POST /baskets/{ident}/packages` (not the promo-code
+  endpoints) can independently return `422` with `"User must login before
+  adding packages to basket"` for username-auth stores — a Phase 7 concern,
+  unrelated to the promo-code endpoints above.
 
 If you find a new mismatch, add it here as a one-line pointer and document the
 full reasoning inline at the point it's handled — the same pattern every entry

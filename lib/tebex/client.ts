@@ -25,7 +25,19 @@ export function tebexClient() {
   });
 }
 
-type TebexResult<T> = { data?: T; response: Response };
+type TebexResult<T> = { data?: T; error?: unknown; response: Response };
+
+// Tebex's own error responses follow this shape (an RFC 7807-style problem
+// object) across the endpoints this app has hit one on — confirmed against a
+// live store's `applyCoupon`/`applyGiftCard`/`applyCreatorCode`/`addPackageToBasket`
+// 422s. `detail` is written to be a human-readable, user-safe explanation
+// (e.g. "The selected coupon code is invalid."), so it's safe to surface
+// directly rather than replacing it with a hand-written generic message.
+function extractErrorDetail(error: unknown): string | undefined {
+  if (typeof error !== "object" || error === null) return undefined;
+  const detail = (error as Record<string, unknown>).detail;
+  return typeof detail === "string" && detail.length > 0 ? detail : undefined;
+}
 
 /**
  * Basket-package mutations (add/remove/update-quantity) are NOT scoped under
@@ -51,8 +63,11 @@ export async function basketPackageRequest<T>(
     headers: { "Content-Type": "application/json", ...init.headers },
   });
 
-  const data = response.ok ? ((await response.json()) as T) : undefined;
-  return { data, response };
+  if (response.ok) {
+    return { data: (await response.json()) as T, response };
+  }
+  const error = await response.json().catch(() => undefined);
+  return { error, response };
 }
 
 /**
@@ -66,7 +81,7 @@ export async function resolveTebexResponse<T>(
   result: Promise<TebexResult<T>>,
   notFoundStatuses: number[] = [404],
 ): Promise<T | null> {
-  const { data, response } = await result;
+  const { data, error, response } = await result;
 
   if (notFoundStatuses.includes(response.status)) {
     return null;
@@ -74,7 +89,8 @@ export async function resolveTebexResponse<T>(
 
   if (!response.ok || data === undefined) {
     throw new Error(
-      `Tebex API request failed (${response.status}): ${response.url}`,
+      extractErrorDetail(error) ??
+        `Tebex API request failed (${response.status}): ${response.url}`,
     );
   }
 
