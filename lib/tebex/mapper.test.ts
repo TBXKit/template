@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { components } from "./generated/schema";
-import { mapCategory, mapPackage, mapWebstore } from "./mapper";
-import type { Category, Package, Webstore } from "./types";
+import { mapBasket, mapCategory, mapPackage, mapWebstore } from "./mapper";
+import type { Basket, Category, Package, Webstore } from "./types";
 
 // The generated schema doesn't declare `supports_usernames` / `supports_gifting`
 // on Webstore even though the live API returns them (see mapper.ts) — extend
@@ -13,6 +13,8 @@ type RawWebstore = components["schemas"]["Webstore"] & {
 type RawCategory = components["schemas"]["Category"];
 type RawPackage = components["schemas"]["Package"];
 type RawPackageMedia = components["schemas"]["PackageMedia"];
+type RawBasket = components["schemas"]["Basket"];
+type RawBasketPackage = components["schemas"]["BasketPackage"];
 
 function buildRawWebstore(overrides: Partial<RawWebstore> = {}): RawWebstore {
   return {
@@ -57,6 +59,37 @@ function buildRawCategory(overrides: Partial<RawCategory> = {}): RawCategory {
     image_url: "https://example.com/category.png",
     display_type: "list",
     packages: [],
+    ...overrides,
+  };
+}
+
+function buildRawBasketPackage(
+  overrides: Partial<RawBasketPackage> = {},
+): RawBasketPackage {
+  return {
+    id: 100,
+    name: "VIP Rank",
+    image: "https://example.com/package.png",
+    in_basket: { quantity: 2, price: 16 },
+    ...overrides,
+  };
+}
+
+// The generated schema types `id` as a string, but a live store returns it as
+// a JSON number (see mapper.ts) — the fixture mirrors real behavior, not the
+// (incorrect) declared type, hence the cast.
+function buildRawBasket(overrides: Partial<RawBasket> = {}): RawBasket {
+  return {
+    id: 827988340 as unknown as string,
+    ident: "1a-55fff4107740a1f40d844ff89607557f45bfafb3",
+    complete: false,
+    base_price: 10,
+    total_price: 8,
+    currency: "EUR",
+    packages: [buildRawBasketPackage()],
+    coupons: [{ code: "SAVE10" }],
+    giftcards: [{ card_number: "0127 0244 7210 1111" }],
+    creator_code: "some-creator",
     ...overrides,
   };
 }
@@ -123,6 +156,40 @@ function assertCategoryInvariants(category: Category): void {
   expect(Array.isArray(category.packages)).toBe(true);
   for (const pkg of category.packages) {
     assertPackageInvariants(pkg);
+  }
+}
+
+function assertBasketInvariants(basket: Basket): void {
+  expect(typeof basket.id).toBe("number");
+  expect(Number.isFinite(basket.id)).toBe(true);
+  expect(typeof basket.ident).toBe("string");
+  expect(typeof basket.complete).toBe("boolean");
+  expect(typeof basket.base_price).toBe("number");
+  expect(Number.isFinite(basket.base_price)).toBe(true);
+  expect(typeof basket.total_price).toBe("number");
+  expect(Number.isFinite(basket.total_price)).toBe(true);
+  expect(typeof basket.currency).toBe("string");
+  expect(
+    basket.creator_code === null || typeof basket.creator_code === "string",
+  ).toBe(true);
+  expect(Array.isArray(basket.packages)).toBe(true);
+  for (const pkg of basket.packages) {
+    expect(typeof pkg.id).toBe("number");
+    expect(Number.isFinite(pkg.id)).toBe(true);
+    expect(typeof pkg.name).toBe("string");
+    expect(pkg.image === null || typeof pkg.image === "string").toBe(true);
+    expect(typeof pkg.quantity).toBe("number");
+    expect(Number.isFinite(pkg.quantity)).toBe(true);
+    expect(typeof pkg.price).toBe("number");
+    expect(Number.isFinite(pkg.price)).toBe(true);
+  }
+  expect(Array.isArray(basket.coupons)).toBe(true);
+  for (const coupon of basket.coupons) {
+    expect(typeof coupon.code).toBe("string");
+  }
+  expect(Array.isArray(basket.giftcards)).toBe(true);
+  for (const giftcard of basket.giftcards) {
+    expect(typeof giftcard.card_number).toBe("string");
   }
 }
 
@@ -431,6 +498,175 @@ describe("mapCategory", () => {
       name: "Elite Rank",
       category: { id: 10, name: "Ranks" },
     });
+  });
+});
+
+describe("mapBasket", () => {
+  it("maps every field from a typical response, flattening in_basket onto each package", () => {
+    const result = mapBasket(buildRawBasket());
+
+    expect(result).toEqual({
+      id: 827988340,
+      ident: "1a-55fff4107740a1f40d844ff89607557f45bfafb3",
+      complete: false,
+      base_price: 10,
+      total_price: 8,
+      currency: "EUR",
+      packages: [
+        {
+          id: 100,
+          name: "VIP Rank",
+          image: "https://example.com/package.png",
+          quantity: 2,
+          price: 16,
+        },
+      ],
+      coupons: [{ code: "SAVE10" }],
+      giftcards: [{ card_number: "0127 0244 7210 1111" }],
+      creator_code: "some-creator",
+    });
+  });
+
+  it("falls back to documented defaults when optional fields are missing", () => {
+    const result = mapBasket({});
+
+    expect(result).toEqual({
+      id: 0,
+      ident: "",
+      complete: false,
+      base_price: 0,
+      total_price: 0,
+      currency: "USD",
+      packages: [],
+      coupons: [],
+      giftcards: [],
+      creator_code: null,
+    });
+  });
+
+  it("maps a missing creator_code to null", () => {
+    const result = mapBasket(buildRawBasket({ creator_code: undefined }));
+
+    expect(result.creator_code).toBeNull();
+  });
+
+  it("maps a completed basket's flag through as true", () => {
+    const result = mapBasket(buildRawBasket({ complete: true }));
+
+    expect(result.complete).toBe(true);
+  });
+
+  it("maps a package with a missing in_basket to zero-value quantity/price", () => {
+    const result = mapBasket(
+      buildRawBasket({
+        packages: [buildRawBasketPackage({ in_basket: undefined })],
+      }),
+    );
+
+    expect(result.packages[0]).toMatchObject({ quantity: 0, price: 0 });
+  });
+});
+
+describe("mapBasket — adversarial input", () => {
+  it("drops a null entry in packages/coupons/giftcards instead of crashing the whole basket", () => {
+    const result = mapBasket(
+      buildRawBasket({
+        packages: [buildRawBasketPackage(), null] as RawBasket["packages"],
+        coupons: [{ code: "KEEP" }, null] as RawBasket["coupons"],
+        giftcards: [{ card_number: "KEEP" }, null] as RawBasket["giftcards"],
+      }),
+    );
+
+    expect(result.packages).toHaveLength(1);
+    expect(result.coupons).toEqual([{ code: "KEEP" }]);
+    expect(result.giftcards).toEqual([{ card_number: "KEEP" }]);
+  });
+
+  it("drops primitive entries in packages/coupons/giftcards instead of crashing", () => {
+    const result = mapBasket(
+      buildRawBasket({
+        packages: [
+          42,
+          "not a package",
+          true,
+        ] as unknown as RawBasket["packages"],
+        coupons: [42, "not a coupon"] as unknown as RawBasket["coupons"],
+        giftcards: [42, "not a giftcard"] as unknown as RawBasket["giftcards"],
+      }),
+    );
+
+    expect(result.packages).toEqual([]);
+    expect(result.coupons).toEqual([]);
+    expect(result.giftcards).toEqual([]);
+  });
+
+  it("maps an empty-object package/coupon/giftcard entry to a fully-defaulted placeholder rather than dropping it", () => {
+    const result = mapBasket(
+      buildRawBasket({
+        packages: [{}] as RawBasket["packages"],
+        coupons: [{}] as RawBasket["coupons"],
+        giftcards: [{}] as RawBasket["giftcards"],
+      }),
+    );
+
+    expect(result.packages).toEqual([
+      { id: 0, name: "", image: null, quantity: 0, price: 0 },
+    ]);
+    expect(result.coupons).toEqual([{ code: "" }]);
+    expect(result.giftcards).toEqual([{ card_number: "" }]);
+  });
+
+  it("falls back to defaults for wrong scalar types instead of passing them through", () => {
+    const result = mapBasket({
+      id: "not-a-number",
+      complete: "yes",
+      base_price: "9.99",
+      total_price: Number.NaN,
+      currency: 840,
+    } as unknown as RawBasket);
+
+    expect(result.id).toBe(0);
+    expect(result.complete).toBe(false);
+    expect(result.base_price).toBe(0);
+    expect(result.total_price).toBe(0);
+    expect(result.currency).toBe("USD");
+  });
+
+  it("ignores unknown extra properties instead of leaking them onto the domain object", () => {
+    const result = mapBasket({
+      ...buildRawBasket(),
+      unexpected_field: "should not appear",
+    } as RawBasket);
+
+    expect(result).not.toHaveProperty("unexpected_field");
+  });
+
+  it("does not throw when called with a frozen input object, including frozen nested packages", () => {
+    const raw = deepFreeze(buildRawBasket());
+
+    expect(() => mapBasket(raw)).not.toThrow();
+  });
+
+  it("never mutates its input", () => {
+    const raw = buildRawBasket();
+    const snapshot = JSON.parse(JSON.stringify(raw));
+
+    mapBasket(raw);
+
+    expect(raw).toEqual(snapshot);
+  });
+
+  it("is deterministic across repeated calls with the same object", () => {
+    const raw = buildRawBasket();
+
+    expect(mapBasket(raw)).toEqual(mapBasket(raw));
+  });
+
+  it("returns a fully-defaulted Basket when called with null, undefined, or a primitive", () => {
+    for (const garbage of [null, undefined, 42, "not an object", []]) {
+      expect(() => mapBasket(garbage as unknown as RawBasket)).not.toThrow();
+      assertBasketInvariants(mapBasket(garbage as unknown as RawBasket));
+    }
   });
 });
 
@@ -855,6 +1091,26 @@ describe("domain invariants under hostile input", () => {
   )("mapWebstore fixture #%s always satisfies Webstore invariants", (_index, fixture) => {
     assertWebstoreInvariants(mapWebstore(fixture as RawWebstore));
   });
+
+  const hostileBasketFixtures: RawBasket[] = [
+    buildRawBasket(),
+    buildRawBasket({ id: "abc" as unknown as string }),
+    buildRawBasket({
+      packages: [
+        buildRawBasketPackage(),
+        null,
+        42,
+        {},
+      ] as RawBasket["packages"],
+    }),
+    {} as RawBasket,
+  ];
+
+  it.each(
+    hostileBasketFixtures.map((fixture, index) => [index, fixture]),
+  )("mapBasket fixture #%s always satisfies Basket invariants", (_index, fixture) => {
+    assertBasketInvariants(mapBasket(fixture as RawBasket));
+  });
 });
 
 describe("randomized resilience", () => {
@@ -899,6 +1155,20 @@ describe("randomized resilience", () => {
         result = mapWebstore(raw);
       }).not.toThrow();
       assertWebstoreInvariants(result as Webstore);
+    }
+  });
+
+  it("mapBasket never throws and always satisfies invariants under random corruption", () => {
+    for (let i = 0; i < ITERATIONS; i++) {
+      const raw = corrupt(
+        buildRawBasket() as unknown as Record<string, unknown>,
+      );
+
+      let result: Basket | undefined;
+      expect(() => {
+        result = mapBasket(raw);
+      }).not.toThrow();
+      assertBasketInvariants(result as Basket);
     }
   });
 

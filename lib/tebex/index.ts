@@ -1,9 +1,17 @@
-import { resolveTebexResponse, tebexClient } from "./client";
+import {
+  basketPackageRequest,
+  resolveTebexResponse,
+  tebexClient,
+} from "./client";
 import type { components } from "./generated/schema";
-import { mapCategory, mapPackage, mapWebstore } from "./mapper";
-import type { Category, Package, Webstore } from "./types";
+import { mapBasket, mapCategory, mapPackage, mapWebstore } from "./mapper";
+import type { Basket, Category, Package, Webstore } from "./types";
 
 const CACHE_OPTIONS = { next: { revalidate: 300 } } as const;
+
+// Basket data is per-visitor and mutates on nearly every request, unlike the
+// catalog data above — it must never be served from the shared 300s cache.
+const NO_STORE_OPTIONS = { cache: "no-store" } as const;
 
 export async function getWebstore(): Promise<Webstore> {
   const { GET } = tebexClient();
@@ -63,4 +71,81 @@ export async function getPackage(id: number): Promise<Package | null> {
   // returns a single Package object at runtime.
   const raw = result.data as unknown as components["schemas"]["Package"];
   return mapPackage(raw);
+}
+
+// A missing/expired basket ident's actual status is confirmed as 404 against
+// a live store (not just assumed) — unlike getCategory/getPackage's 422/400,
+// this one does follow the conventional not-found status.
+export async function getBasket(ident: string): Promise<Basket | null> {
+  const { GET } = tebexClient();
+  const result = await resolveTebexResponse(
+    GET("/baskets/{basketIdent}", {
+      ...NO_STORE_OPTIONS,
+      params: { path: { basketIdent: ident } },
+    }),
+    [404],
+  );
+
+  if (!result?.data) return null;
+  return mapBasket(result.data);
+}
+
+export async function createBasket(): Promise<Basket> {
+  const { POST } = tebexClient();
+  const result = await resolveTebexResponse(POST("/baskets", NO_STORE_OPTIONS));
+
+  if (!result?.data) {
+    throw new Error("Basket creation failed: no basket returned");
+  }
+  return mapBasket(result.data);
+}
+
+// See the doc comment on `basketPackageRequest` in client.ts: these two
+// endpoints live at `/baskets/{basketIdent}/packages...` relative to the bare
+// API root, not the account-scoped base every other call in this file uses —
+// confirmed against a live store, not assumed from the generated schema.
+//
+// Unlike getBasket/createBasket (which wrap the basket in `{ data }` via
+// BasketResponse), these two endpoints return the Basket object directly.
+export async function addPackageToBasket(
+  ident: string,
+  packageId: number,
+  quantity: number,
+): Promise<Basket> {
+  const result = await resolveTebexResponse(
+    basketPackageRequest<components["schemas"]["Basket"]>(
+      `/baskets/${encodeURIComponent(ident)}/packages`,
+      {
+        method: "POST",
+        cache: "no-store",
+        body: JSON.stringify({ package_id: String(packageId), quantity }),
+      },
+    ),
+  );
+
+  if (!result) {
+    throw new Error("Adding package to basket failed: no basket returned");
+  }
+  return mapBasket(result);
+}
+
+export async function removePackageFromBasket(
+  ident: string,
+  packageId: number,
+): Promise<Basket> {
+  const result = await resolveTebexResponse(
+    basketPackageRequest<components["schemas"]["Basket"]>(
+      `/baskets/${encodeURIComponent(ident)}/packages/remove`,
+      {
+        method: "POST",
+        cache: "no-store",
+        body: JSON.stringify({ package_id: String(packageId) }),
+      },
+    ),
+  );
+
+  if (!result) {
+    throw new Error("Removing package from basket failed: no basket returned");
+  }
+  return mapBasket(result);
 }

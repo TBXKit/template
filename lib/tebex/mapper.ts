@@ -15,8 +15,12 @@
  */
 import type {
   BaseItem,
+  Basket,
+  BasketPackage,
   Category,
   CategoryDisplayType,
+  Coupon,
+  GiftCard,
   Package,
   PackageMedia,
   PackageType,
@@ -149,5 +153,50 @@ export function mapPackage(raw: unknown): Package {
     total_price: toFiniteNumber(source.total_price, 0),
     expiration_date: toNullableString(source.expiration_date),
     category: mapPackageCategory(source.category),
+  };
+}
+
+// --- Basket ----------------------------------------------------------------
+
+function mapBasketPackage(raw: unknown): BasketPackage {
+  const source = isRecord(raw) ? raw : {};
+  const inBasket = isRecord(source.in_basket) ? source.in_basket : {};
+
+  return {
+    id: toFiniteNumber(source.id, 0),
+    name: toRequiredString(source.name, ""),
+    image: toNullableString(source.image),
+    quantity: toFiniteNumber(inBasket.quantity, 0),
+    price: toFiniteNumber(inBasket.price, 0),
+  };
+}
+
+function mapCoupon(raw: unknown): Coupon {
+  const source = isRecord(raw) ? raw : {};
+  return { code: toRequiredString(source.code, "") };
+}
+
+function mapGiftCard(raw: unknown): GiftCard {
+  const source = isRecord(raw) ? raw : {};
+  return { card_number: toRequiredString(source.card_number, "") };
+}
+
+export function mapBasket(raw: unknown): Basket {
+  const source = isRecord(raw) ? raw : {};
+  const packages = Array.isArray(source.packages) ? source.packages : [];
+  const coupons = Array.isArray(source.coupons) ? source.coupons : [];
+  const giftcards = Array.isArray(source.giftcards) ? source.giftcards : [];
+
+  return {
+    id: toFiniteNumber(source.id, 0),
+    ident: toRequiredString(source.ident, ""),
+    complete: toBoolean(source.complete, false),
+    packages: packages.filter(isRecord).map(mapBasketPackage),
+    coupons: coupons.filter(isRecord).map(mapCoupon),
+    giftcards: giftcards.filter(isRecord).map(mapGiftCard),
+    creator_code: toNullableString(source.creator_code),
+    base_price: toFiniteNumber(source.base_price, 0),
+    total_price: toFiniteNumber(source.total_price, 0),
+    currency: toRequiredString(source.currency, "USD"),
   };
 }

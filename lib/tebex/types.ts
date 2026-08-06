@@ -60,6 +60,39 @@ export interface Package extends BaseItem {
   category: BaseItem;
 }
 
+export interface BasketPackage extends BaseItem {
+  image: string | null;
+  quantity: number;
+  price: number;
+}
+
+export interface Coupon {
+  code: string;
+}
+
+export interface GiftCard {
+  card_number: string;
+}
+
+export interface Basket {
+  /**
+   * The generated schema types this as a string, but the live API returns a
+   * JSON number (confirmed against a real store) — modeled here as `number`
+   * to match actual behavior, the same "trust behavior over the spec" call
+   * already made for `Package.type` elsewhere in this file.
+   */
+  id: number;
+  ident: string;
+  complete: boolean;
+  packages: BasketPackage[];
+  coupons: Coupon[];
+  giftcards: GiftCard[];
+  creator_code: string | null;
+  base_price: number;
+  total_price: number;
+  currency: string;
+}
+
 export type CategoryDisplayType = "list" | "grid";
 
 export interface Category extends BaseItem {

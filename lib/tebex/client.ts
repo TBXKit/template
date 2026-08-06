@@ -28,6 +28,34 @@ export function tebexClient() {
 type TebexResult<T> = { data?: T; response: Response };
 
 /**
+ * Basket-package mutations (add/remove/update-quantity) are NOT scoped under
+ * `/accounts/{token}/...` like every other endpoint this app calls —
+ * confirmed against a live store. This contradicts both the generated schema
+ * (which declares the path as `/{basketIdent}/packages`, missing a `baskets/`
+ * segment, implicitly relative to the account-scoped base like everything
+ * else in `paths`) and Tebex's own published docs (which claim account
+ * scoping applies here too). The real, working endpoint is
+ * `{API_BASE}/baskets/{basketIdent}/packages`, relative to the bare API root
+ * with no account token in the path at all. Since no key in the generated
+ * `paths` type matches this, these calls can't go through `tebexClient()`'s
+ * typed `GET`/`POST` — this is a plain `fetch` instead, but still funneled
+ * through `resolveTebexResponse` for the same not-found/error handling every
+ * other call gets.
+ */
+export async function basketPackageRequest<T>(
+  path: string,
+  init: RequestInit,
+): Promise<TebexResult<T>> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...init,
+    headers: { "Content-Type": "application/json", ...init.headers },
+  });
+
+  const data = response.ok ? ((await response.json()) as T) : undefined;
+  return { data, response };
+}
+
+/**
  * Resolves an openapi-fetch call the way the Tebex Headless API actually
  * behaves: expected "not found" responses (the status varies per endpoint —
  * Tebex doesn't consistently use 404) resolve to `null` instead of throwing,
