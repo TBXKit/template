@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site";
 
-const SITE_URL = process.env.SITE_URL ?? "http://localhost:3000";
-
+// Next.js auto-maps this file to /robots.txt by name and location alone —
+// there's no explicit route registration to find.
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {

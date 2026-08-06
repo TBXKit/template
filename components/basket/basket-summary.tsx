@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/tebex/currency";
 import type { Basket } from "@/lib/tebex/types";
 import { BasketItem } from "./basket-item";
 
@@ -8,10 +9,7 @@ export function BasketSummary({
   basket: Basket;
   currency: string;
 }) {
-  const total = new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency,
-  }).format(basket.total_price);
+  const total = formatCurrency(basket.total_price, currency);
 
   return (
     <div>

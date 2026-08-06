@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @import "../themes/default.css";
 
+/*
+ * Maps theme variables onto Tailwind utility names — e.g. a component's
+ * `bg-primary` class resolves to `--color-primary` below, which points at
+ * `--primary`, defined (light/dark) in themes/default.css.
+ */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

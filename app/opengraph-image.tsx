@@ -1,6 +1,8 @@
 import { ImageResponse } from "next/og";
 import { getWebstore } from "@/lib/tebex";
 
+// Next.js auto-maps this file to this route's Open Graph image by name and
+// location alone — there's no explicit route registration to find.
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "Storefront preview";

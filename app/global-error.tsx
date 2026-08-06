@@ -3,6 +3,10 @@
 import { useEffect } from "react";
 import "./globals.css";
 
+// Only fires for errors thrown by the root layout (app/layout.tsx) itself —
+// error.tsx can't catch those, since it renders *inside* that layout. This
+// file must render its own <html>/<body> (and re-import global CSS) because
+// it fully replaces the root layout when active.
 export default function GlobalError({
   error,
   reset,

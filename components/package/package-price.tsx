@@ -1,3 +1,5 @@
+import { formatCurrency } from "@/lib/tebex/currency";
+
 export function PackagePrice({
   basePrice,
   totalPrice,
@@ -11,24 +13,21 @@ export function PackagePrice({
   currency: string;
   className?: string;
 }) {
-  const format = (amount: number) =>
-    new Intl.NumberFormat(undefined, { style: "currency", currency }).format(
-      amount,
-    );
-
   const onSale = discount > 0 && totalPrice < basePrice;
 
   if (!onSale) {
-    return <span className={className}>{format(totalPrice)}</span>;
+    return (
+      <span className={className}>{formatCurrency(totalPrice, currency)}</span>
+    );
   }
 
   return (
     <span className={className}>
       <span className="inline-flex flex-wrap items-center gap-2">
         <span className="text-muted-foreground line-through">
-          {format(basePrice)}
+          {formatCurrency(basePrice, currency)}
         </span>
-        <span>{format(totalPrice)}</span>
+        <span>{formatCurrency(totalPrice, currency)}</span>
         <span className="rounded-sm bg-primary/10 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-primary">
           Sale
         </span>

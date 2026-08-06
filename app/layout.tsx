@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { StoreDisabledBanner } from "@/components/store-disabled-banner";
+import { SITE_URL } from "@/lib/site";
 import { getCategories, getWebstore } from "@/lib/tebex";
 import { getCurrentBasket } from "@/lib/tebex/session";
 import "./globals.css";
@@ -17,8 +18,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const SITE_URL = process.env.SITE_URL ?? "http://localhost:3000";
-
 export async function generateMetadata(): Promise<Metadata> {
   const webstore = await getWebstore();
   const description =
@@ -27,6 +26,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     metadataBase: new URL(SITE_URL),
+    // Routes without their own generateMetadata (e.g. the homepage) inherit
+    // `default` for <title>; routes that set their own `title` get it
+    // wrapped by `template` instead.
     title: {
       default: webstore.name,
       template: `%s | ${webstore.name}`,
@@ -53,6 +55,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     getCategories(),
     getCurrentBasket(),
   ]);
+  // Feeds the header's basket-count badge — see components/header.tsx.
   const itemCount =
     basket?.packages.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
 

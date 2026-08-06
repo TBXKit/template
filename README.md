@@ -1,8 +1,8 @@
 # Tebex Storefront Theme
 
-A customizable storefront theme for [Tebex](https://tebex.io) stores, built on Next.js 16 (App Router) and Tailwind v4. It renders your store's categories and packages from the [Tebex Headless API](https://docs.tebex.io/developers/headless-api/overview) — browse categories, browse packages, view package details. It's meant to be forked and reskinned per store, not used as a multi-tenant product.
+A customizable storefront theme for [Tebex](https://tebex.io) stores, built on Next.js 16 (App Router) and Tailwind v4. It renders your store's categories and packages from the [Tebex Headless API](https://docs.tebex.io/developers/headless-api/overview) — browse categories, browse packages, view package details, and manage a basket. It's meant to be forked and reskinned per store, not used as a multi-tenant product.
 
-The current release is browse-only (categories, packages, package detail). Basket, checkout, authentication, gifting, coupons/gift cards/creator codes, and account/purchase history are planned.
+The current release covers browsing (categories, packages, package detail) and a basket (add/remove items, `/cart`). Checkout, authentication, gifting, coupons/gift cards/creator codes, and account/purchase history are planned.
 
 ## Getting started
 
@@ -67,7 +67,7 @@ Store name, description, logo, and favicon are not theme tokens — they come fr
 
 Run `npm run generate:tebex-types` after a Tebex API change. Never hand-edit `lib/tebex/generated/schema.ts` — it's overwritten on every run.
 
-The rest of the app never touches the generated types or `openapi-fetch` directly: `lib/tebex/index.ts` is the only supported entry point (`getWebstore`, `getCategories`, `getCategory`, `getPackage`), returning the app-facing domain types from `lib/tebex/types.ts`. See [`AGENTS.md`](AGENTS.md) for the full architecture.
+The rest of the app never touches the generated types or `openapi-fetch` directly: `lib/tebex/index.ts` is the only supported entry point for Tebex API calls (`getWebstore`, `getCategories`, `getCategory`, `getPackage`, plus basket read/write functions), returning the app-facing domain types from `lib/tebex/types.ts`. Basket/session state (the cookie holding a visitor's basket identity) is managed separately in `lib/tebex/session.ts`. See [`AGENTS.md`](AGENTS.md) for the full architecture.
 
 ## Deploying
 

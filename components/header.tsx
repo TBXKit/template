@@ -9,6 +9,7 @@ export function Header({
 }: {
   webstore: Webstore;
   categories: Category[];
+  /** Computed in app/layout.tsx from the current basket; this component only renders it. */
   itemCount?: number;
 }) {
   const links = [

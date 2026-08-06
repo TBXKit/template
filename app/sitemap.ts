@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site";
 import { getCategories } from "@/lib/tebex";
 
-const SITE_URL = process.env.SITE_URL ?? "http://localhost:3000";
-
+// Next.js auto-maps this file to /sitemap.xml by name and location alone —
+// there's no explicit route registration to find.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const categories = await getCategories();
 

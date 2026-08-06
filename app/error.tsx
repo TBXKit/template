@@ -2,6 +2,9 @@
 
 import { useEffect } from "react";
 
+// Catches errors thrown while rendering any route below the root layout.
+// Errors thrown by the root layout itself skip this and hit
+// global-error.tsx instead, since this boundary lives inside that layout.
 export default function RouteError({
   error,
   reset,

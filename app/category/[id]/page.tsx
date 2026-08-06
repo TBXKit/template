@@ -26,6 +26,8 @@ export default async function CategoryPage({
     getWebstore(),
   ]);
 
+  // Renders the sibling `not-found.tsx` in this folder — Next.js wires that
+  // up by file location, there's no import connecting the two.
   if (!category) notFound();
 
   return (

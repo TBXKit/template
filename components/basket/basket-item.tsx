@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { formatCurrency } from "@/lib/tebex/currency";
 import type { BasketPackage } from "@/lib/tebex/types";
 import { RemoveFromBasketButton } from "./remove-from-basket-button";
 
@@ -9,10 +10,7 @@ export function BasketItem({
   item: BasketPackage;
   currency: string;
 }) {
-  const price = new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency,
-  }).format(item.price);
+  const price = formatCurrency(item.price, currency);
 
   return (
     <li className="flex items-center gap-4 border-b border-border py-4 last:border-b-0">
