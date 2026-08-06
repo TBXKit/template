@@ -5,7 +5,7 @@ import { Header } from "@/components/header";
 import { StoreDisabledBanner } from "@/components/store-disabled-banner";
 import { SITE_URL } from "@/lib/site";
 import { getCategories, getWebstore } from "@/lib/tebex";
-import { getCurrentBasket } from "@/lib/tebex/session";
+import { getCurrentBasket, getCurrentUsername } from "@/lib/tebex/session";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -50,14 +50,20 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const [webstore, categories, basket] = await Promise.all([
+  const [webstore, categories, basket, storedUsername] = await Promise.all([
     getWebstore(),
     getCategories(),
     getCurrentBasket(),
+    getCurrentUsername(),
   ]);
   // Feeds the header's basket-count badge — see components/header.tsx.
   const itemCount =
     basket?.packages.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
+  // `basket.username` (set at creation time, confirmed unchangeable after —
+  // see lib/tebex/index.ts's createBasket) is authoritative once a basket
+  // exists; `storedUsername` is only the pre-basket signal for a visitor
+  // who's logged in but hasn't triggered a basket yet.
+  const username = basket?.username ?? storedUsername;
 
   return (
     <html
@@ -76,6 +82,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           webstore={webstore}
           categories={categories}
           itemCount={itemCount}
+          username={username}
         />
         <main id="main-content" className="flex-1">
           {children}

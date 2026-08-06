@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { components } from "./generated/schema";
-import { mapBasket, mapCategory, mapPackage, mapWebstore } from "./mapper";
+import {
+  mapAuthProviders,
+  mapBasket,
+  mapCategory,
+  mapPackage,
+  mapWebstore,
+} from "./mapper";
 import type { Basket, Category, Package, Webstore } from "./types";
 
 // The generated schema doesn't declare `supports_usernames` / `supports_gifting`
@@ -105,6 +111,7 @@ function buildRawBasket(overrides: Partial<RawBasket> = {}): RawBasket {
     coupons: [{ code: "SAVE10" }],
     giftcards: [{ card_number: "0127 0244 7210 1111" }],
     creator_code: "some-creator",
+    username: "Notch",
     ...overrides,
   };
 }
@@ -229,6 +236,9 @@ function assertBasketInvariants(basket: Basket): void {
   for (const giftcard of basket.giftcards) {
     expect(typeof giftcard.card_number).toBe("string");
   }
+  expect(basket.username === null || typeof basket.username === "string").toBe(
+    true,
+  );
 }
 
 function assertWebstoreInvariants(webstore: Webstore): void {
@@ -751,6 +761,7 @@ describe("mapBasket", () => {
       coupons: [{ code: "SAVE10" }],
       giftcards: [{ card_number: "0127 0244 7210 1111" }],
       creator_code: "some-creator",
+      username: "Notch",
     });
   });
 
@@ -768,6 +779,7 @@ describe("mapBasket", () => {
       coupons: [],
       giftcards: [],
       creator_code: null,
+      username: null,
     });
   });
 
@@ -775,6 +787,20 @@ describe("mapBasket", () => {
     const result = mapBasket(buildRawBasket({ creator_code: undefined }));
 
     expect(result.creator_code).toBeNull();
+  });
+
+  it("maps a missing username to null (anonymous/not-yet-authorized basket)", () => {
+    const result = mapBasket(buildRawBasket({ username: undefined }));
+
+    expect(result.username).toBeNull();
+  });
+
+  it("maps a non-string username to null instead of crashing", () => {
+    const result = mapBasket(
+      buildRawBasket({ username: 42 as unknown as string }),
+    );
+
+    expect(result.username).toBeNull();
   });
 
   it("maps a completed basket's flag through as true", () => {
@@ -893,6 +919,60 @@ describe("mapBasket — adversarial input", () => {
     for (const garbage of [null, undefined, 42, "not an object", []]) {
       expect(() => mapBasket(garbage as unknown as RawBasket)).not.toThrow();
       assertBasketInvariants(mapBasket(garbage as unknown as RawBasket));
+    }
+  });
+});
+
+describe("mapAuthProviders", () => {
+  it("maps a well-formed provider list", () => {
+    const result = mapAuthProviders([
+      { name: "Steam", url: "https://ident.tebex.io/steam" },
+      { name: "FiveM", url: "https://ident.tebex.io/fivem" },
+    ]);
+
+    expect(result).toEqual([
+      { name: "Steam", url: "https://ident.tebex.io/steam" },
+      { name: "FiveM", url: "https://ident.tebex.io/fivem" },
+    ]);
+  });
+
+  it("unwraps the extra array layer the live API adds beyond the documented shape", () => {
+    // Confirmed against a live store: an empty response is `[[]]`, not `[]`.
+    expect(mapAuthProviders([[]])).toEqual([]);
+
+    expect(
+      mapAuthProviders([
+        [{ name: "Steam", url: "https://ident.tebex.io/steam" }],
+      ]),
+    ).toEqual([{ name: "Steam", url: "https://ident.tebex.io/steam" }]);
+  });
+
+  it("still handles the documented (non-double-wrapped) shape", () => {
+    expect(
+      mapAuthProviders([
+        { name: "Steam", url: "https://ident.tebex.io/steam" },
+      ]),
+    ).toEqual([{ name: "Steam", url: "https://ident.tebex.io/steam" }]);
+  });
+
+  it("drops entries missing a name or url instead of crashing", () => {
+    const result = mapAuthProviders([
+      { name: "Steam", url: "https://ident.tebex.io/steam" },
+      { name: "", url: "https://ident.tebex.io/blank-name" },
+      { name: "No URL" },
+      null,
+      42,
+    ]);
+
+    expect(result).toEqual([
+      { name: "Steam", url: "https://ident.tebex.io/steam" },
+    ]);
+  });
+
+  it("returns an empty array for null, undefined, or a non-array input instead of throwing", () => {
+    for (const garbage of [null, undefined, 42, "not an array", {}]) {
+      expect(() => mapAuthProviders(garbage)).not.toThrow();
+      expect(mapAuthProviders(garbage)).toEqual([]);
     }
   });
 });

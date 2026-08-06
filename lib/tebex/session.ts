@@ -5,6 +5,14 @@ import type { Basket } from "./types";
 const BASKET_COOKIE = "tebex_basket_ident";
 const BASKET_COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 1 week
 
+// Separate from BASKET_COOKIE because a username has to be known *before* a
+// basket is created (see `createBasket`'s doc comment: there's no way to
+// attach one to a basket after the fact) — this is captured by the login
+// form (`app/login/`) ahead of the basket even existing, then consumed by
+// `ensureBasket` below the first time a basket actually needs creating.
+const USERNAME_COOKIE = "tebex_username";
+const USERNAME_COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 1 week, matching the basket cookie
+
 /**
  * Read-only: safe to call from Server Components, layouts, and Server
  * Actions. Never creates a basket or writes a cookie — Next.js only allows
@@ -35,7 +43,14 @@ export async function ensureBasket(): Promise<Basket> {
     if (existing) return existing;
   }
 
-  const created = await createBasket();
+  // Attaches a known username (if the visitor already logged in via
+  // app/login) to the basket at the moment it's created — the only point
+  // Tebex allows setting one. A username-auth store with no stored username
+  // yet is expected to have already redirected to /login before reaching
+  // here (see components/package/add-to-basket-action.ts); this is just the
+  // mechanical "use it if we have it" half.
+  const username = store.get(USERNAME_COOKIE)?.value;
+  const created = await createBasket(username);
   store.set(BASKET_COOKIE, created.ident, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -47,6 +62,34 @@ export async function ensureBasket(): Promise<Basket> {
 }
 
 /**
+ * Read-only: safe anywhere, same as `getCurrentBasket`. Reflects a username
+ * the visitor has submitted via `app/login` even before any basket exists
+ * yet (once a basket exists, `basket.username` — set at creation time and
+ * unchangeable after — is the authoritative value; this cookie is only the
+ * pre-basket signal).
+ */
+export async function getCurrentUsername(): Promise<string | null> {
+  const store = await cookies();
+  return store.get(USERNAME_COOKIE)?.value ?? null;
+}
+
+/**
+ * Only callable from a Server Action or Route Handler. Called once by the
+ * login form's Server Action; `ensureBasket` picks it up the next time a
+ * basket actually needs creating.
+ */
+export async function setCurrentUsername(username: string): Promise<void> {
+  const store = await cookies();
+  store.set(USERNAME_COOKIE, username, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: USERNAME_COOKIE_MAX_AGE,
+  });
+}
+
+/**
  * Clears the basket-ident cookie once a basket is done being useful (e.g.
  * after a completed checkout) so the next add-to-basket call starts a fresh
  * one. Only callable from a Server Action or Route Handler, same as
@@ -55,5 +98,25 @@ export async function ensureBasket(): Promise<Basket> {
  */
 export async function clearBasketSession(): Promise<void> {
   const store = await cookies();
+  store.delete(BASKET_COOKIE);
+}
+
+/**
+ * Logs the visitor out: clears both the username and basket cookies.
+ *
+ * Deliberate decision (per AGENTS.md/ROADMAP.md Phase 7.4 — don't copy the
+ * reference's basket-teardown-on-logout without reconsidering it here):
+ * this project ties the two together on purpose, not by default. A
+ * basket's `username` can only be set at creation time (confirmed — see
+ * `createBasket`'s doc comment) and never unset, so keeping the same
+ * basket after "logging out" would leave a basket that's still,
+ * server-side, associated with the old identity while the header claims
+ * the visitor is signed out — an inconsistency, not a neutral choice.
+ * Clearing both guarantees the next basket (created on the next
+ * add-to-basket) starts genuinely anonymous.
+ */
+export async function clearAuthSession(): Promise<void> {
+  const store = await cookies();
+  store.delete(USERNAME_COOKIE);
   store.delete(BASKET_COOKIE);
 }

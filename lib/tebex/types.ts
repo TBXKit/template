@@ -25,7 +25,15 @@ export interface Webstore {
   disabled: boolean;
   /** e.g. "Minecraft: Java Edition" */
   platform_type: string;
-  /** True if the store supports linking a player username to a basket (needed for tiered categories/gifting). */
+  /**
+   * True if the store links a player username to a basket instead of an
+   * external OAuth-style provider redirect. Originally documented here (and
+   * in Tebex's own materials) as only "needed for tiered categories/gifting"
+   * — confirmed against a live store to actually gate every package add:
+   * `POST /baskets/{ident}/packages` 422s with "User must login before
+   * adding packages to basket" until the basket was created with a
+   * `username`. See `lib/tebex/session.ts` and `app/login/`.
+   */
   supports_usernames: boolean;
   /** True if the store has gifting enabled. */
   supports_gifting: boolean;
@@ -126,6 +134,25 @@ export interface Basket {
   base_price: number;
   total_price: number;
   currency: string;
+  /**
+   * The player identity linked to this basket, if any — set by passing
+   * `username` at basket creation (username-auth stores, confirmed against
+   * a live store though undocumented in Tebex's own schema) or by
+   * completing the external-provider auth redirect (`getBasketAuthProviders`).
+   * There's no endpoint to attach/change this on a basket after creation.
+   */
+  username: string | null;
+}
+
+/**
+ * One external identity provider (Steam, FiveM, ...) a visitor can
+ * authorize a basket against — returned by `getBasketAuthProviders`. Empty
+ * for username-auth stores (`Webstore.supports_usernames`), which use
+ * `createBasket(username)` instead of a redirect.
+ */
+export interface AuthProvider {
+  name: string;
+  url: string;
 }
 
 export type CategoryDisplayType = "list" | "grid";

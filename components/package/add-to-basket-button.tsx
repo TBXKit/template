@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useActionState, useState } from "react";
 import type { PackageVariable } from "@/lib/tebex/types";
 import { addToBasketAction } from "./add-to-basket-action";
@@ -17,9 +18,11 @@ export function AddToBasketButton({
     {},
   );
   const [quantity, setQuantity] = useState(1);
+  const pathname = usePathname();
 
   const [state, formAction, isPending] = useActionState(
-    async () => addToBasketAction(packageId, quantity, variableValues),
+    async () =>
+      addToBasketAction(packageId, quantity, variableValues, pathname),
     null,
   );
 

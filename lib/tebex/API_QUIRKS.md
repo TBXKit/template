@@ -57,6 +57,22 @@ it actually matters when you're changing that code.
   endpoints) can independently return `422` with `"User must login before
   adding packages to basket"` for username-auth stores — a Phase 7 concern,
   unrelated to the promo-code endpoints above.
+- **A username-auth store's basket must be *created* with a `username`** —
+  there's no endpoint to attach one afterward. Confirmed live: `POST
+  /baskets {"username": "..."}` immediately populates `Basket.username`/
+  `username_id`, and only then do package adds stop 422ing with "User must
+  login...". Neither the generated schema's `createBasket` requestBody
+  (only `complete_url`/`cancel_url`/`custom`/`complete_auto_redirect`) nor
+  Tebex's published docs for that endpoint declare `username` as a field —
+  see `createBasket`'s doc comment in `lib/tebex/index.ts`. This is why
+  `lib/tebex/session.ts` keeps the submitted username in its own cookie
+  (`app/login/`) rather than trying to upgrade an already-created anonymous
+  basket in place.
+- **`getBasketAuthProviders`'s response is wrapped in one extra array layer**
+  beyond what the generated schema's `BasketAuthResponse` (`{name, url}[]`)
+  declares — confirmed live: a store with no external providers configured
+  returns `[[]]`, not `[]`. `mapAuthProviders` unwraps this defensively
+  regardless of which shape actually arrives. See `mapper.ts`.
 
 If you find a new mismatch, add it here as a one-line pointer and document the
 full reasoning inline at the point it's handled — the same pattern every entry

@@ -4,8 +4,20 @@ import {
   tebexClient,
 } from "./client";
 import type { components } from "./generated/schema";
-import { mapBasket, mapCategory, mapPackage, mapWebstore } from "./mapper";
-import type { Basket, Category, Package, Webstore } from "./types";
+import {
+  mapAuthProviders,
+  mapBasket,
+  mapCategory,
+  mapPackage,
+  mapWebstore,
+} from "./mapper";
+import type {
+  AuthProvider,
+  Basket,
+  Category,
+  Package,
+  Webstore,
+} from "./types";
 
 const CACHE_OPTIONS = { next: { revalidate: 300 } } as const;
 
@@ -90,14 +102,43 @@ export async function getBasket(ident: string): Promise<Basket | null> {
   return mapBasket(result.data);
 }
 
-export async function createBasket(): Promise<Basket> {
+export async function createBasket(username?: string): Promise<Basket> {
   const { POST } = tebexClient();
-  const result = await resolveTebexResponse(POST("/baskets", NO_STORE_OPTIONS));
+  // `username` isn't declared in the generated schema's createBasket
+  // requestBody (only `complete_url`/`cancel_url`/`custom`/
+  // `complete_auto_redirect` are) — confirmed against a live store as a
+  // real, undocumented field: passing it associates the created basket with
+  // that player identity immediately. Required before any package can be
+  // added on username-auth stores (`Webstore.supports_usernames`) — there's
+  // no separate endpoint to attach a username to a basket after creation.
+  const body = username ? { username } : undefined;
+  const result = await resolveTebexResponse(
+    POST("/baskets", { ...NO_STORE_OPTIONS, body }),
+  );
 
   if (!result?.data) {
     throw new Error("Basket creation failed: no basket returned");
   }
   return mapBasket(result.data);
+}
+
+// For stores that authorize via an external provider redirect rather than a
+// plain username (`!Webstore.supports_usernames`) — see `mapAuthProviders`
+// for the one confirmed schema/runtime mismatch this endpoint has (its
+// response is wrapped in one extra array layer beyond what's documented).
+export async function getBasketAuthProviders(
+  ident: string,
+  returnUrl: string,
+): Promise<AuthProvider[]> {
+  const { GET } = tebexClient();
+  const result = await resolveTebexResponse(
+    GET("/baskets/{basketIdent}/auth?returnUrl={returnUrl}", {
+      ...NO_STORE_OPTIONS,
+      params: { path: { basketIdent: ident, returnUrl } },
+    }),
+  );
+
+  return mapAuthProviders(result);
 }
 
 // See the doc comment on `basketPackageRequest` in client.ts: these two

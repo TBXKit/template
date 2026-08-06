@@ -1,16 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
+import { logoutAction } from "@/components/auth/logout-action";
 import type { Category, Webstore } from "@/lib/tebex/types";
 
 export function Header({
   webstore,
   categories,
   itemCount = 0,
+  username = null,
 }: {
   webstore: Webstore;
   categories: Category[];
   /** Computed in app/layout.tsx from the current basket; this component only renders it. */
   itemCount?: number;
+  /** The signed-in player identity, if any — see app/layout.tsx. */
+  username?: string | null;
 }) {
   const links = [
     { href: "/", label: "Home" },
@@ -64,6 +68,27 @@ export function Header({
               </span>
             ) : null}
           </Link>
+
+          {username ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>Signed in as {username}</span>
+              <form action={logoutAction}>
+                <button
+                  type="submit"
+                  className="underline-offset-2 hover:text-foreground hover:underline"
+                >
+                  Logout
+                </button>
+              </form>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              Login
+            </Link>
+          )}
 
           <details className="md:hidden">
             <summary className="cursor-pointer list-none text-sm text-muted-foreground">

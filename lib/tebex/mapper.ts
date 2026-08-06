@@ -14,6 +14,7 @@
  * `lib/tebex/index.ts` is the only caller of these functions.
  */
 import type {
+  AuthProvider,
   BaseItem,
   Basket,
   BasketPackage,
@@ -256,5 +257,30 @@ export function mapBasket(raw: unknown): Basket {
     base_price: toFiniteNumber(source.base_price, 0),
     total_price: toFiniteNumber(source.total_price, 0),
     currency: toRequiredString(source.currency, "USD"),
+    username: toNullableString(source.username),
   };
+}
+
+// --- AuthProvider ------------------------------------------------------------
+
+// Confirmed against a live store: `GET /baskets/{ident}/auth` returns its
+// array wrapped in one extra array layer beyond what the generated schema's
+// `BasketAuthResponse` (a plain `{name, url}[]`) declares — e.g. `[[]]` for
+// a store with no providers configured, not `[]`. `mapAuthProviders` accepts
+// either shape (unwrapping one array layer if the first entry is itself an
+// array) so this doesn't require the caller to know about the quirk.
+export function mapAuthProviders(raw: unknown): AuthProvider[] {
+  const outer = Array.isArray(raw) ? raw : [];
+  const items = Array.isArray(outer[0]) ? outer[0] : outer;
+
+  return items
+    .filter(isRecord)
+    .filter(
+      (item): item is Record<string, unknown> & { name: string; url: string } =>
+        typeof item.name === "string" &&
+        item.name.length > 0 &&
+        typeof item.url === "string" &&
+        item.url.length > 0,
+    )
+    .map((item) => ({ name: item.name, url: item.url }));
 }
