@@ -4,6 +4,7 @@ import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { StoreDisabledBanner } from "@/components/store-disabled-banner";
 import { getCategories, getWebstore } from "@/lib/tebex";
+import { getCurrentBasket } from "@/lib/tebex/session";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -47,10 +48,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const [webstore, categories] = await Promise.all([
+  const [webstore, categories, basket] = await Promise.all([
     getWebstore(),
     getCategories(),
+    getCurrentBasket(),
   ]);
+  const itemCount =
+    basket?.packages.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
 
   return (
     <html
@@ -65,7 +69,11 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           Skip to content
         </a>
         {webstore.disabled ? <StoreDisabledBanner /> : null}
-        <Header webstore={webstore} categories={categories} />
+        <Header
+          webstore={webstore}
+          categories={categories}
+          itemCount={itemCount}
+        />
         <main id="main-content" className="flex-1">
           {children}
         </main>

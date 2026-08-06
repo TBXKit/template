@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { Package } from "@/lib/tebex/types";
+import { AddToBasketButton } from "./add-to-basket-button";
 import { PackageBadge } from "./package-badge";
 import { PackageGallery } from "./package-gallery";
 import { PackagePrice } from "./package-price";
@@ -50,6 +51,7 @@ export function PackageDetail({
           currency={currency}
           className="mt-2 block text-xl font-medium text-primary"
         />
+        <AddToBasketButton packageId={pkg.id} />
         {pkg.description ? (
           <p className="mt-6 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
             {pkg.description}

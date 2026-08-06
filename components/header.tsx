@@ -5,9 +5,11 @@ import type { Category, Webstore } from "@/lib/tebex/types";
 export function Header({
   webstore,
   categories,
+  itemCount = 0,
 }: {
   webstore: Webstore;
   categories: Category[];
+  itemCount?: number;
 }) {
   const links = [
     { href: "/", label: "Home" },
@@ -37,26 +39,8 @@ export function Header({
           {webstore.name}
         </Link>
 
-        <nav aria-label="Primary" className="hidden gap-6 md:flex">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        <details className="md:hidden">
-          <summary className="cursor-pointer list-none text-sm text-muted-foreground">
-            Menu
-          </summary>
-          <nav
-            aria-label="Primary"
-            className="absolute inset-x-0 top-full flex flex-col gap-3 border-b border-border bg-card px-6 py-4"
-          >
+        <div className="flex items-center gap-4">
+          <nav aria-label="Primary" className="hidden gap-6 md:flex">
             {links.map((link) => (
               <Link
                 key={link.href}
@@ -67,7 +51,39 @@ export function Header({
               </Link>
             ))}
           </nav>
-        </details>
+
+          <Link
+            href="/cart"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            Cart
+            {itemCount > 0 ? (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-xs font-medium text-primary-foreground">
+                {itemCount}
+              </span>
+            ) : null}
+          </Link>
+
+          <details className="md:hidden">
+            <summary className="cursor-pointer list-none text-sm text-muted-foreground">
+              Menu
+            </summary>
+            <nav
+              aria-label="Primary"
+              className="absolute inset-x-0 top-full flex flex-col gap-3 border-b border-border bg-card px-6 py-4"
+            >
+              {links.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+          </details>
+        </div>
       </div>
     </header>
   );
