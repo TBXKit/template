@@ -90,6 +90,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <Footer
           siteName={webstore.name}
           platformType={webstore.platform_type}
+          discordUrl={process.env.DISCORD_URL}
         />
       </body>
     </html>
