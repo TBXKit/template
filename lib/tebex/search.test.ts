@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Category, Package } from "@/lib/tebex/types";
-import { searchPackages } from "./search-packages";
+import { searchPackages } from "./search";
+import type { Category, Package } from "./types";
 
 function buildPackage(overrides: Partial<Package> = {}): Package {
   return {

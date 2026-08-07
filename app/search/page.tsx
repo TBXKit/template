@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PackageCard } from "@/components/package/package-card";
 import { SearchForm } from "@/components/search-form";
 import { getCategories, getWebstore } from "@/lib/tebex";
-import { searchPackages } from "./search-packages";
+import { searchPackages } from "@/lib/tebex/search";
 
 export const metadata: Metadata = {
   title: "Search",

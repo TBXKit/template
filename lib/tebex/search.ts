@@ -1,4 +1,4 @@
-import type { Category, Package } from "@/lib/tebex/types";
+import type { Category, Package } from "./types";
 
 /**
  * Case-insensitive partial match against `getCategories()`'s already-cached
