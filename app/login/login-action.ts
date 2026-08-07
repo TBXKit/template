@@ -6,6 +6,8 @@
 
 import { redirect } from "next/navigation";
 import { logger } from "@/lib/logger";
+import { performAddToBasket } from "@/lib/tebex/add-to-basket";
+import { takePendingAction } from "@/lib/tebex/pending-action";
 import { setCurrentUsername } from "@/lib/tebex/session";
 import { isSafeRedirectPath } from "./safe-redirect";
 
@@ -29,5 +31,16 @@ export async function loginAction(
   // (see lib/tebex/index.ts's createBasket).
   await setCurrentUsername(username);
   logger.info({ username }, "Login succeeded");
+
+  // Replays the add-to-basket call that redirected here in the first place
+  // (see add-to-basket-action.ts), if there was one. A failure here (e.g.
+  // the package sold out while the visitor was signing in) is swallowed —
+  // performAddToBasket already logs it, and the visitor is still correctly
+  // signed in and on their way to `next`; they can just retry the add.
+  const pending = await takePendingAction();
+  if (pending) {
+    await performAddToBasket(pending);
+  }
+
   redirect(isSafeRedirectPath(next) ? next : "/");
 }

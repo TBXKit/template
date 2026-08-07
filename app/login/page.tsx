@@ -47,9 +47,8 @@ async function ExternalProviderLinks({ next }: { next: string }) {
     // already attached) — nothing to authorize yet if the visitor hasn't
     // added anything. Reachable if a visitor opens /login directly (e.g.
     // from the header), or is redirected here as their very first action
-    // (e.g. attempting to gift a package before adding anything else) —
-    // that second case used to be a dead end with no actual sign-in
-    // affordance, since signing in was exactly what triggered the redirect.
+    // (e.g. attempting to gift a package before adding anything else),
+    // where signing in is exactly the action that triggered the redirect.
     // `startSignInAction` creates an anonymous basket server-side so this
     // page can re-render with real provider links below.
     return (
@@ -67,6 +66,13 @@ async function ExternalProviderLinks({ next }: { next: string }) {
     );
   }
 
+  // Unlike the username-login path (login-action.ts), a pending add-to-basket
+  // call (see add-to-basket-action.ts) isn't replayed automatically after an
+  // external-provider redirect: doing so would need to read and clear a
+  // cookie on the way back in, which Next.js only allows from a Server
+  // Action or Route Handler — and this app deliberately has neither (see
+  // AGENTS.md's Architecture section). A visitor signing in this way just
+  // retries the add manually once they're back.
   const returnUrl = `${SITE_URL}${next}`;
   const providers = await getBasketAuthProviders(basket.ident, returnUrl);
 
