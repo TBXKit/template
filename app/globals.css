@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "../themes/default.css";
+@plugin "@tailwindcss/typography";
 
 /*
  * Maps theme variables onto Tailwind utility names — e.g. a component's
@@ -33,4 +34,33 @@
 body {
   background: var(--color-background);
   color: var(--color-foreground);
+}
+
+/*
+ * Points @tailwindcss/typography's `prose` at this project's own theme
+ * tokens instead of its default gray palette (`prose-neutral`) — otherwise
+ * Tebex-authored HTML (package/category descriptions) would render in fixed
+ * Tailwind grays that don't move when a store swaps themes/*.css, breaking
+ * the "swapping a theme file actually changes the rendered colors" rule.
+ * `--foreground`/etc. already vary by light/dark in themes/default.css, so
+ * this needs no separate `dark:prose-invert` — the same variables adapt on
+ * their own.
+ */
+.prose {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-lead: var(--muted-foreground);
+  --tw-prose-links: var(--primary);
+  --tw-prose-bold: var(--foreground);
+  --tw-prose-counters: var(--muted-foreground);
+  --tw-prose-bullets: var(--muted-foreground);
+  --tw-prose-hr: var(--border);
+  --tw-prose-quotes: var(--foreground);
+  --tw-prose-quote-borders: var(--border);
+  --tw-prose-captions: var(--muted-foreground);
+  --tw-prose-code: var(--foreground);
+  --tw-prose-pre-code: var(--foreground);
+  --tw-prose-pre-bg: var(--muted);
+  --tw-prose-th-borders: var(--border);
+  --tw-prose-td-borders: var(--border);
 }

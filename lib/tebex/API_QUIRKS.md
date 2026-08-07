@@ -100,6 +100,18 @@ it actually matters when you're changing that code.
   a username to a platform ID, and guessing that string match risks
   silently misrouting a real gift. Deliberately left unverified/unwired
   rather than guessed — see `ROADMAP.md`'s Phase 8.1 Known Unknowns entry.
+- **`description` fields are HTML, not plain text** — confirmed live on
+  `Webstore`, `Category`, and `Package`: the dashboard's rich text editor
+  produces real markup (e.g. `"<p>...</p>"`, `<strong>`, `<a href>`), not
+  the plain string the generated schema's type declares. `Package.description`
+  and `Category.description` are rendered accordingly via
+  `components/tebex-html.tsx`'s `TebexHtml` (sanitized with DOMPurify before
+  injection, since this is still externally-influenced HTML even though it
+  comes from the store owner's own account rather than a visitor).
+  `Webstore.description` is not — its only current consumers
+  (`generateMetadata`'s `<meta description>`, the package page's JSON-LD)
+  need plain text, so raw HTML currently leaks into both; unaddressed, see
+  the doc comment on `Webstore.description` in `lib/tebex/types.ts`.
 - **`Webstore.supports_gifting` isn't enforced by the API** — confirmed
   live: a store with it `false` (gifting off in **Settings → Checkout**)
   still accepted and correctly resolved a `target_username`. This

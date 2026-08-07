@@ -1,4 +1,5 @@
 import { PackageCard } from "@/components/package/package-card";
+import { TebexHtml } from "@/components/tebex-html";
 import type { Category } from "@/lib/tebex/types";
 
 export function CategoryDetail({
@@ -16,9 +17,7 @@ export function CategoryDetail({
         {category.name}
       </h1>
       {category.description ? (
-        <p className="mt-2 text-sm text-muted-foreground">
-          {category.description}
-        </p>
+        <TebexHtml html={category.description} className="mt-2 max-w-none" />
       ) : null}
 
       {category.packages.length > 0 ? (

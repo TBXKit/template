@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { TebexHtml } from "@/components/tebex-html";
 import type { Package, PackageMedia } from "@/lib/tebex/types";
 import { AddToBasketButton } from "./add-to-basket-button";
 import { PackageBadge } from "./package-badge";
@@ -60,9 +61,7 @@ export function PackageDetail({
           canGift={supportsGifting && !pkg.disable_gifting}
         />
         {pkg.description ? (
-          <p className="mt-6 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-            {pkg.description}
-          </p>
+          <TebexHtml html={pkg.description} className="mt-6 max-w-none" />
         ) : (
           <p className="mt-6 text-sm italic text-muted-foreground">
             No description available.

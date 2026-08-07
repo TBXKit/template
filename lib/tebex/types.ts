@@ -17,6 +17,15 @@
 export interface Webstore {
   id: number;
   name: string;
+  /**
+   * HTML from the dashboard's rich text editor, not plain text — confirmed
+   * against a live store, same as `Package.description`/`Category.description`.
+   * Unlike those two, every current usage of this field (`generateMetadata`'s
+   * `<meta description>`, the package page's JSON-LD) needs plain text, not
+   * rendered HTML — neither strips it today, so raw tags currently leak into
+   * both. Not fixed here since no consumer currently renders this one as
+   * HTML via `TebexHtml`; flagged for whoever addresses those two call sites.
+   */
   description: string;
   logo: string | null;
   currency: string;
@@ -93,6 +102,7 @@ export interface PackageVariable {
 }
 
 export interface Package extends BaseItem {
+  /** HTML from the dashboard's rich text editor, not plain text — confirmed against a live store. Render via `components/tebex-html.tsx`'s `TebexHtml`, never inserted as plain text. */
   description: string;
   image: string | null;
   /** Additional images/video beyond `image`, rendered as a gallery on the package detail page — see the private `PackageGallery` in `components/package/package-detail.tsx`. */
@@ -172,6 +182,7 @@ export interface AuthProvider {
 export type CategoryDisplayType = "list" | "grid";
 
 export interface Category extends BaseItem {
+  /** HTML from the dashboard's rich text editor, not plain text — same as `Package.description`. Render via `TebexHtml`. */
   description: string;
   packages: Package[];
   image_url: string | null;
