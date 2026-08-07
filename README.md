@@ -69,6 +69,12 @@ Run `npm run generate:tebex-types` after a Tebex API change. Never hand-edit `li
 
 The rest of the app never touches the generated types or `openapi-fetch` directly: `lib/tebex/index.ts` is the only supported entry point for Tebex API calls — catalog reads (`getWebstore`, `getCategories`, `getCategory`, `getPackage`), basket read/write functions, coupon/gift-card/creator-code apply/remove, and external-provider login links — returning the app-facing domain types from `lib/tebex/types.ts`. Basket and auth session state (the cookies holding a visitor's basket identity and, where relevant, their username) are managed separately in `lib/tebex/session.ts`. See [`AGENTS.md`](AGENTS.md) for the full architecture.
 
+## Troubleshooting
+
+**"Invalid product provided" when adding a package to the basket, even though the package looks completely normal in the dashboard and loads fine on its own page.**
+
+Tebex's basket-add endpoint appears to reject packages priced unusually high (likely a payment-processor transaction limit, not something this storefront controls or can detect ahead of time) — confirmed against a live store, where an oddly-priced test package failed to add with exactly this generic error while a normally-priced one in the same category added fine. That validation only runs at add-to-basket time, not on a plain read, which is why the package still looks fine everywhere else. If you hit this, check the package's price in the Tebex dashboard for a typo (e.g. a missing decimal point) before assuming it's a bug in the storefront — Tebex's own error message doesn't mention price at all.
+
 ## Deploying
 
 Any Next.js host works. See the [Next.js deployment docs](https://nextjs.org/docs/app/building-your-application/deploying) — the [Vercel Platform](https://vercel.com/new) is the path of least resistance. Whichever host you use, set `TEBEX_PUBLIC_TOKEN` as an environment variable there too.
