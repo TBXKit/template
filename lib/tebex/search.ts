@@ -2,10 +2,9 @@ import type { Category, Package } from "./types";
 
 /**
  * Case-insensitive partial match against `getCategories()`'s already-cached
- * result — confirmed against Tebex's docs and the generated schema that no
- * category/package listing endpoint accepts a search/query parameter (see
- * ROADMAP.md Phase 10.1), so this is client/server-side filtering, not an
- * API call. Deduplicates by package id in case the same package ever
+ * result — no category/package listing endpoint in Tebex's Headless API
+ * accepts a search/query parameter, so this is client/server-side filtering,
+ * not an API call. Deduplicates by package id in case the same package ever
  * appears in more than one category.
  */
 export function searchPackages(

@@ -3,10 +3,9 @@ import { describe, expect, it } from "vitest";
 import type { Package, PackageMedia } from "@/lib/tebex/types";
 import { PackageDetail } from "./package-detail";
 
-// Covers the gallery/media rendering that used to be tested in isolation via
-// PackageGallery, back when it was its own exported component. It's now a
-// private helper inside package-detail.tsx, so its behavior is exercised
-// here through PackageDetail's public rendering instead.
+// PackageGallery is a private helper inside package-detail.tsx, not its own
+// exported component, so its gallery/media rendering is exercised here
+// through PackageDetail's public rendering rather than in isolation.
 
 const image = (url: string, primary = false): PackageMedia => ({
   type: "image",

@@ -129,16 +129,13 @@ export async function clearBasketSession(): Promise<void> {
 /**
  * Logs the visitor out: clears both the username and basket cookies.
  *
- * Deliberate decision (per AGENTS.md/ROADMAP.md Phase 7.4 — don't copy the
- * reference's basket-teardown-on-logout without reconsidering it here):
- * this project ties the two together on purpose, not by default. A
- * basket's `username` can only be set at creation time (confirmed — see
- * `createBasket`'s doc comment) and never unset, so keeping the same
- * basket after "logging out" would leave a basket that's still,
- * server-side, associated with the old identity while the header claims
- * the visitor is signed out — an inconsistency, not a neutral choice.
- * Clearing both guarantees the next basket (created on the next
- * add-to-basket) starts genuinely anonymous.
+ * Both are cleared together, not just the username: a basket's `username`
+ * can only be set at creation time (see `createBasket`'s doc comment) and
+ * never unset, so keeping the same basket after "logging out" would leave
+ * a basket that's still, server-side, associated with the old identity
+ * while the header claims the visitor is signed out. Clearing both
+ * guarantees the next basket (created on the next add-to-basket) starts
+ * genuinely anonymous.
  */
 export async function clearAuthSession(): Promise<void> {
   const store = await cookies();

@@ -34,7 +34,7 @@ export function TebexHtml({
    * modifiers (e.g. a caller adding `prose-lg` alongside this component's
    * own `prose-sm`) is explicitly unsupported by the plugin. "sm" matches
    * this app's default body text size (`PackageDetail`/`CategoryDetail`);
-   * "lg" is for more prominent copy (`Hero`'s tagline, previously `text-lg`).
+   * "lg" is for more prominent copy (`Hero`'s tagline).
    */
   size?: "sm" | "lg";
   className?: string;

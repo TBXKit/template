@@ -170,8 +170,8 @@ export async function addPackageToBasket(
   targetUsername?: string,
   // Per Tebex's docs (guides/baskets/gifting-packages), the preferred field
   // for standard (e.g. Java Edition) stores: a platform identifier such as a
-  // Minecraft UUID or Steam ID, rather than a plain username. Added for
-  // completeness at this layer; not currently wired to any UI input — this
+  // Minecraft UUID or Steam ID, rather than a plain username. Exists at this
+  // layer for callers that need it, but no UI input collects it — this
   // project has no live standard-vs-Bedrock/Geyser store pair to verify
   // which stores should collect this instead of `targetUsername`, and
   // guessing risks silently misrouting a real gift. See `API_QUIRKS.md`.

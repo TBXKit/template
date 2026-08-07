@@ -77,9 +77,9 @@ describe("CategoryGrid — with categories", () => {
     );
 
     // Regression guard: TebexHtml renders an <article>, which is invalid
-    // (and previously *was* nested) inside a <p> — this asserts there's no
-    // <p> ancestor for it, since that specific mistake only causes a
-    // hydration-mismatch warning in a real browser, not a jsdom/RTL failure.
+    // inside a <p> — this asserts there's no <p> ancestor for it, since
+    // that specific mistake only causes a hydration-mismatch warning in a
+    // real browser, not a jsdom/RTL failure.
     const strong = container.querySelector("strong");
     expect(strong).toHaveTextContent("ranks");
     expect(strong?.closest("p")).not.toBeNull();

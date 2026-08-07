@@ -25,12 +25,11 @@ export type PromoCodeResult =
 
 // Unlike AddToBasketResult/RemoveFromBasketResult's fixed generic message,
 // this surfaces the underlying error's own message: `lib/tebex/client.ts`
-// now extracts Tebex's own `detail` text (e.g. "The selected coupon code is
-// invalid.") for exactly this reason — Phase 6 specifically requires a
-// *specific* visible error, not just "something went wrong." That same
-// guarantee (Tebex's `detail` is always written to be visitor-safe) is why
-// a caught error here logs at `warn`, not `error`: it's expected,
-// recoverable, visitor-caused input, not a system failure.
+// extracts Tebex's own `detail` text (e.g. "The selected coupon code is
+// invalid."), which is always written to be visitor-safe — a specific,
+// actionable error rather than a generic "something went wrong." That same
+// guarantee is why a caught error here logs at `warn`, not `error`: it's
+// expected, recoverable, visitor-caused input, not a system failure.
 async function runPromoCodeAction(
   event: string,
   mutate: (ident: string) => Promise<unknown>,

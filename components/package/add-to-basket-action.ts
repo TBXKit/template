@@ -24,8 +24,8 @@ export async function addToBasketAction(
   currentPath: string,
   // The target player's username, if this add is a gift — see
   // add-to-basket-button.tsx. Gifting always requires the giver to be
-  // logged in (ROADMAP.md Phase 8.2), independent of whether the store
-  // requires login for ordinary purchases (`webstore.supports_usernames`).
+  // logged in, independent of whether the store requires login for
+  // ordinary purchases (`webstore.supports_usernames`).
   giftUsername?: string,
 ): Promise<AddToBasketResult> {
   // Gate *before* any basket exists rather than attempting the add and
@@ -79,12 +79,11 @@ export async function addToBasketAction(
   } catch (error) {
     // A gift-target failure carries a specific, actionable message from
     // Tebex (e.g. "User not found") — worth surfacing exactly, unlike a
-    // plain add's generic fallback, since Phase 8 specifically calls for
-    // a visible, specific error for an unresolvable gift target. That same
-    // distinction sets the log level: an unresolvable gift target is
-    // visitor-caused and recoverable (they can retry with a different
-    // username), while the generic-fallback branch means something wasn't
-    // recognized as safe to explain and deserves a closer look.
+    // plain add's generic fallback. That same distinction sets the log
+    // level: an unresolvable gift target is visitor-caused and recoverable
+    // (they can retry with a different username), while the
+    // generic-fallback branch means something wasn't recognized as safe to
+    // explain and deserves a closer look.
     const giftTargetError =
       giftUsername && error instanceof Error ? error.message : undefined;
 
