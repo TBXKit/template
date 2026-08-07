@@ -13,13 +13,14 @@ async function fireHandler(handler: () => void) {
   });
 }
 
-const { checkout, handlers, routerRefresh, completeCheckoutAction } =
+const { checkout, handlers, routerRefresh, completeCheckoutAction, confetti } =
   vi.hoisted(() => {
     const handlers: Record<string, () => void> = {};
     return {
       handlers,
       routerRefresh: vi.fn(),
       completeCheckoutAction: vi.fn().mockResolvedValue(undefined),
+      confetti: vi.fn(),
       checkout: {
         init: vi.fn(),
         launch: vi.fn(),
@@ -31,6 +32,7 @@ const { checkout, handlers, routerRefresh, completeCheckoutAction } =
   });
 
 vi.mock("@tebexio/tebex.js", () => ({ checkout }));
+vi.mock("canvas-confetti", () => ({ default: confetti }));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: routerRefresh }),
@@ -173,5 +175,26 @@ describe("CheckoutPanel — payment:complete", () => {
     await fireHandler(handlers.close);
 
     expect(routerRefresh).not.toHaveBeenCalled();
+  });
+
+  it("fires a confetti burst", async () => {
+    render(<CheckoutPanel basket={buildBasket()} currency="USD" />);
+    fireEvent.click(screen.getByRole("button", { name: "Checkout" }));
+
+    await fireHandler(handlers["payment:complete"]);
+    await vi.waitFor(() => expect(confetti).toHaveBeenCalled());
+  });
+
+  it("skips confetti when the visitor prefers reduced motion", async () => {
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = (query: string) =>
+      ({ matches: query.includes("reduce") }) as MediaQueryList;
+
+    render(<CheckoutPanel basket={buildBasket()} currency="USD" />);
+    fireEvent.click(screen.getByRole("button", { name: "Checkout" }));
+    await fireHandler(handlers["payment:complete"]);
+
+    expect(confetti).not.toHaveBeenCalled();
+    window.matchMedia = originalMatchMedia;
   });
 });

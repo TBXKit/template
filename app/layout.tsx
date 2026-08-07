@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { StoreDisabledBanner } from "@/components/store-disabled-banner";
+import { ToastProvider } from "@/components/toast-provider";
 import { SITE_URL } from "@/lib/site";
 import { getCategories, getWebstore } from "@/lib/tebex";
 import { getCurrentBasket, getCurrentUsername } from "@/lib/tebex/session";
@@ -85,7 +86,14 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           username={username}
         />
         <main id="main-content" className="flex-1">
-          {children}
+          {/*
+            Scoped to `main` rather than the whole body: the only current
+            consumer, QuickAddButton, only ever renders inside page content,
+            not Header/Footer — and it renders its own fixed-position toast
+            region as a sibling of children, so where it sits in the tree
+            doesn't affect layout either way.
+          */}
+          <ToastProvider>{children}</ToastProvider>
         </main>
         <Footer
           siteName={webstore.name}

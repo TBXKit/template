@@ -9,6 +9,23 @@ import { completeCheckoutAction } from "./checkout-action";
 import { PromoCodes } from "./promo-codes";
 
 /**
+ * Fires a confetti burst once, on the actual moment of `payment:complete` —
+ * not a component-level effect, since `complete` only flips once and this
+ * has no state or props of its own to react to. `canvas-confetti` is a
+ * dynamic `import()` rather than a top-level one so its code never ships in
+ * the initial bundle a visitor loads to reach `/cart` at all, only once a
+ * payment actually completes. Skipped under `prefers-reduced-motion` — it's
+ * a delight, not information, so there's nothing lost by not animating it.
+ */
+function celebrate(): void {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  import("canvas-confetti").then(({ default: confetti }) => {
+    confetti({ particleCount: 120, spread: 75, origin: { y: 0.6 } });
+  });
+}
+
+/**
  * Wraps the basket summary with the Tebex.js checkout overlay and the
  * post-checkout confirmation state. A Client Component because launching and
  * reacting to the Tebex.js overlay is unavoidably interactive (per
@@ -55,6 +72,7 @@ export function CheckoutPanel({
       completeRef.current = true;
       setComplete(true);
       completeCheckoutAction().then(() => router.refresh());
+      celebrate();
     });
 
     checkout.on("payment:error", () => {

@@ -5,6 +5,8 @@ import { useActionState, useState } from "react";
 import type { PackageVariable } from "@/lib/tebex/types";
 import { addToBasketAction } from "./add-to-basket-action";
 
+const QUANTITY_PRESETS = [1, 5, 10];
+
 export function AddToBasketButton({
   packageId,
   variables,
@@ -60,16 +62,38 @@ export function AddToBasketButton({
 
       <div className="flex items-center gap-3">
         {disableQuantity ? null : (
-          <input
-            type="number"
-            min={1}
-            step={1}
-            required
-            value={quantity}
-            onChange={(event) => setQuantity(Number(event.target.value))}
-            aria-label="Quantity"
-            className="w-20 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-          />
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              step={1}
+              required
+              value={quantity}
+              onChange={(event) => setQuantity(Number(event.target.value))}
+              aria-label="Quantity"
+              className="w-20 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+            />
+            {/* Shortcut that sets the input above, not a replacement for
+                it — unlike the reference client's quantity buttons, this
+                still allows any arbitrary quantity via the input itself. */}
+            <div className="flex gap-1">
+              {QUANTITY_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setQuantity(preset)}
+                  aria-pressed={quantity === preset}
+                  className={`rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
+                    quantity === preset
+                      ? "border-primary text-primary"
+                      : "border-border text-muted-foreground hover:border-primary"
+                  }`}
+                >
+                  {preset}×
+                </button>
+              ))}
+            </div>
+          </div>
         )}
         <button
           type="submit"

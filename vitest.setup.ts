@@ -12,3 +12,20 @@ import "@testing-library/jest-dom/vitest";
 afterEach(() => {
   cleanup();
 });
+
+// jsdom doesn't implement `window.matchMedia` at all — anything that reads
+// it (e.g. checkout-panel.tsx's `prefers-reduced-motion` check) throws
+// without this. Defaults to "doesn't match" for every query; a test that
+// needs the opposite overrides `window.matchMedia` itself for that one case.
+window.matchMedia =
+  window.matchMedia ??
+  ((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }));

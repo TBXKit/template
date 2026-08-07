@@ -122,6 +122,64 @@ describe("AddToBasketButton — no variables, no gifting", () => {
     });
   });
 
+  it("sets the quantity input when a preset button is clicked", () => {
+    render(
+      <AddToBasketButton
+        packageId={7}
+        variables={[]}
+        disableQuantity={false}
+        canGift={false}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "5×" }));
+
+    expect(screen.getByLabelText("Quantity")).toHaveValue(5);
+  });
+
+  it("still allows an arbitrary quantity via the input after using a preset", async () => {
+    addToBasketAction.mockResolvedValueOnce({ success: true });
+    render(
+      <AddToBasketButton
+        packageId={7}
+        variables={[]}
+        disableQuantity={false}
+        canGift={false}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "10×" }));
+    fireEvent.change(screen.getByLabelText("Quantity"), {
+      target: { value: "3" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add to basket" }));
+
+    await waitFor(() => {
+      expect(addToBasketAction).toHaveBeenCalledWith(
+        7,
+        3,
+        {},
+        "/package/123",
+        undefined,
+      );
+    });
+  });
+
+  it("omits the quantity presets when disableQuantity is true", () => {
+    render(
+      <AddToBasketButton
+        packageId={7}
+        variables={[]}
+        disableQuantity={true}
+        canGift={false}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "5×" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows a success message after adding", async () => {
     addToBasketAction.mockResolvedValueOnce({ success: true });
     render(

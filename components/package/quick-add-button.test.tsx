@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { ToastProvider } from "@/components/toast-provider";
 import { QuickAddButton } from "./quick-add-button";
 
 const { addToBasketAction } = vi.hoisted(() => ({
@@ -56,5 +57,40 @@ describe("QuickAddButton", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Add to basket" })).toBeEnabled();
+  });
+});
+
+describe("QuickAddButton — toast", () => {
+  it("also shows a toast on success, for visibility off-screen in a grid", async () => {
+    addToBasketAction.mockResolvedValueOnce({ success: true });
+    render(
+      <ToastProvider>
+        <QuickAddButton packageId={1} />
+      </ToastProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Add to basket" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Added to your basket.",
+    );
+  });
+
+  it("shows the same error in the toast as inline", async () => {
+    addToBasketAction.mockResolvedValueOnce({
+      success: false,
+      error: "Could not add this package to your basket. Please try again.",
+    });
+    render(
+      <ToastProvider>
+        <QuickAddButton packageId={1} />
+      </ToastProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Add to basket" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Could not add this package to your basket. Please try again.",
+    );
   });
 });

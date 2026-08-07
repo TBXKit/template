@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@tebexio/tebex.js": "^1.11.0",
+    "canvas-confetti": "^1.9.4",
     "isomorphic-dompurify": "^3.22.0",
     "next": "16.3.0",
     "openapi-fetch": "^0.17.0",
@@ -27,6 +28,7 @@
     "@tailwindcss/typography": "^0.5.20",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

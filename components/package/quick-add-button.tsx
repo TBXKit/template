@@ -1,7 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { useToast } from "@/components/toast-provider";
 import { addToBasketAction } from "./add-to-basket-action";
 
 /**
@@ -13,10 +14,24 @@ import { addToBasketAction } from "./add-to-basket-action";
  */
 export function QuickAddButton({ packageId }: { packageId: number }) {
   const pathname = usePathname();
+  const showToast = useToast();
   const [state, formAction, isPending] = useActionState(
     async () => addToBasketAction(packageId, 1, undefined, pathname, undefined),
     null,
   );
+
+  // A card sits in a grid alongside others, so the inline text below is
+  // easy to miss — this is the off-screen-safe copy of the same result.
+  // `state` only changes when a new result actually lands (useActionState
+  // doesn't re-fire it on unrelated re-renders), so this doesn't toast on
+  // every render.
+  useEffect(() => {
+    if (!state) return;
+    showToast(
+      state.success ? "Added to your basket." : state.error,
+      state.success ? "success" : "error",
+    );
+  }, [state, showToast]);
 
   return (
     <form action={formAction}>
