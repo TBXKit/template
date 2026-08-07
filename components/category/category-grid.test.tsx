@@ -64,6 +64,27 @@ describe("CategoryGrid — with categories", () => {
 
     expect(screen.queryByText("Server ranks")).not.toBeInTheDocument();
   });
+
+  it("renders an HTML description as real markup, not escaped text", () => {
+    const { container } = render(
+      <CategoryGrid
+        categories={[
+          buildCategory({
+            description: "<p>Server <strong>ranks</strong></p>",
+          }),
+        ]}
+      />,
+    );
+
+    // Regression guard: TebexHtml renders an <article>, which is invalid
+    // (and previously *was* nested) inside a <p> — this asserts there's no
+    // <p> ancestor for it, since that specific mistake only causes a
+    // hydration-mismatch warning in a real browser, not a jsdom/RTL failure.
+    const strong = container.querySelector("strong");
+    expect(strong).toHaveTextContent("ranks");
+    expect(strong?.closest("p")).not.toBeNull();
+    expect(strong?.closest("article")?.closest("p")).toBeNull();
+  });
 });
 
 function basePackage() {

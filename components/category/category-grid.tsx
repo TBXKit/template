@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { TebexHtml } from "@/components/tebex-html";
 import type { Category } from "@/lib/tebex/types";
 
 export function CategoryGrid({ categories }: { categories: Category[] }) {
@@ -51,9 +52,7 @@ function CategoryCard({ category }: { category: Category }) {
           {category.name}
         </h3>
         {category.description ? (
-          <p className="mt-2 text-sm text-muted-foreground">
-            {category.description}
-          </p>
+          <TebexHtml html={category.description} className="mt-2 max-w-none" />
         ) : null}
         <span className="mt-4 text-sm text-muted-foreground">
           {category.packages.length}{" "}
