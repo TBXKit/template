@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { logoutAction } from "@/components/auth/logout-action";
+import { PlayerAvatar } from "@/components/player-avatar";
 import { SearchForm } from "@/components/search-form";
 import type { Category, Webstore } from "@/lib/tebex/types";
 
@@ -84,7 +85,14 @@ export function Header({
           <div className="hidden items-center gap-4 md:flex">
             {username ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Link href="/account" className="hover:text-foreground">
+                <Link
+                  href="/account"
+                  className="flex items-center gap-1.5 hover:text-foreground"
+                >
+                  <PlayerAvatar
+                    username={username}
+                    platformType={webstore.platform_type}
+                  />
                   Signed in as {username}
                 </Link>
                 <form action={logoutAction}>
@@ -129,8 +137,12 @@ export function Header({
                   <>
                     <Link
                       href="/account"
-                      className="text-sm text-muted-foreground hover:text-foreground"
+                      className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
                     >
+                      <PlayerAvatar
+                        username={username}
+                        platformType={webstore.platform_type}
+                      />
                       Signed in as {username}
                     </Link>
                     <form action={logoutAction}>

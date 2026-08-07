@@ -40,8 +40,7 @@ export default async function AccountPage() {
         Purchase history isn't shown: it isn't exposed by the public-token
         Headless API this storefront uses — it lives behind the separate
         Plugin API's X-Tebex-Secret private key instead, which this project
-        deliberately doesn't hold (see AGENTS.md). Stated plainly rather
-        than silently omitted.
+        doesn't hold yet. Stated plainly rather than silently omitted.
       */}
       <p className="mt-4 text-sm text-muted-foreground">
         Purchase history isn't available through this store's front end.

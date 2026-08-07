@@ -138,4 +138,37 @@ describe("Header — auth state", () => {
       expect(link).toHaveAttribute("href", "/account");
     }
   });
+
+  it("shows a player avatar next to the signed-in identity on a Minecraft store", () => {
+    // alt="" gives the avatar an implicit "presentation" role, not "img" —
+    // queried by src directly rather than via getByRole, same reasoning as
+    // player-avatar.test.tsx.
+    const { container } = render(
+      <Header
+        webstore={buildWebstore({ platform_type: "Minecraft: Java Edition" })}
+        categories={categories}
+        username="Notch"
+      />,
+    );
+
+    expect(
+      container.querySelectorAll('img[src*="mc-heads.net"]').length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("omits the player avatar on a non-Minecraft store", () => {
+    const { container } = render(
+      <Header
+        webstore={buildWebstore({ platform_type: "Steam" })}
+        categories={categories}
+        username="Notch"
+      />,
+    );
+
+    // The signed-in identity is still shown as text, just without an avatar.
+    expect(screen.getAllByText("Signed in as Notch").length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('img[src*="mc-heads.net"]')).toHaveLength(
+      0,
+    );
+  });
 });
