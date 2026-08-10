@@ -8,7 +8,19 @@ export default function HomeLoading() {
         {/* Mirrors app/page.tsx's own HOMEPAGE_MODE check, so the skeleton
             shape matches whichever branch the page itself is about to take. */}
         {process.env.HOMEPAGE_MODE !== "storefront" ? (
-          <div className="mx-auto h-48 w-full max-w-md animate-pulse rounded-lg border border-dashed border-border bg-card" />
+          <div className="flex flex-col gap-12">
+            <div className="h-40 w-full animate-pulse rounded-lg border border-dashed border-border bg-card" />
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list, never reordered
+                key={i}
+                className="flex flex-col gap-4"
+              >
+                <div className="h-5 w-40 animate-pulse rounded-lg bg-muted" />
+                <div className="h-20 w-full animate-pulse rounded-lg bg-muted" />
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="flex flex-col gap-16">
             {Array.from({ length: 2 }).map((_, i) => (

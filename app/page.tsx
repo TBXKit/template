@@ -15,7 +15,13 @@ export default async function HomePage() {
       <>
         <Hero
           title={webstore.name}
-          description={webstore.description || undefined}
+          // A fresh store usually has no description set yet — unlike
+          // storefront mode below, template mode substitutes a generic
+          // tagline instead of leaving the hero without one.
+          description={
+            webstore.description ||
+            "A fresh Tebex storefront, ready for your catalog."
+          }
         />
         <div className="mx-auto max-w-6xl px-6 py-16">
           <GettingStarted />
