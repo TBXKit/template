@@ -1,6 +1,7 @@
-import { CategoryGrid } from "@/components/category/category-grid";
+import { CategoryShowcase } from "@/components/category-showcase";
+import { ClosingCta } from "@/components/closing-cta";
 import { Hero } from "@/components/hero";
-import { StorefrontIntro } from "@/components/storefront-intro";
+import { ValueProposition } from "@/components/value-proposition";
 import { getCategories, getWebstore } from "@/lib/tebex";
 
 export default async function HomePage() {
@@ -15,9 +16,13 @@ export default async function HomePage() {
         title={webstore.name}
         description={webstore.description || undefined}
       />
-      <div className="mx-auto flex max-w-6xl flex-col gap-12 px-6 py-16">
-        <StorefrontIntro storeName={webstore.name} />
-        <CategoryGrid categories={categories} currency={webstore.currency} />
+      <div className="mx-auto flex max-w-6xl flex-col gap-16 px-6 py-16">
+        <ValueProposition />
+        <CategoryShowcase
+          categories={categories}
+          currency={webstore.currency}
+        />
+        <ClosingCta />
       </div>
     </>
   );

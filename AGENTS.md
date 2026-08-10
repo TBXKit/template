@@ -337,7 +337,7 @@ A single Server Action gets its own file, named `<verb>-action.ts` (`add-to-bask
 
 ## Component organization
 
-Components are grouped by Tebex domain where a domain has more than one related component — `components/category/`, `components/package/`, `components/basket/`, `components/auth/`. Components without siblings stay as flat files at the top of `components/` (`header.tsx`, `footer.tsx`, `hero.tsx`, `breadcrumbs.tsx`, `store-disabled-banner.tsx`, `search-form.tsx`, `tebex-html.tsx`, `toast-provider.tsx`, `player-avatar.tsx`, `storefront-intro.tsx`).
+Components are grouped by Tebex domain where a domain has more than one related component — `components/category/`, `components/package/`, `components/basket/`, `components/auth/`. Components without siblings stay as flat files at the top of `components/` (`header.tsx`, `footer.tsx`, `hero.tsx`, `breadcrumbs.tsx`, `store-disabled-banner.tsx`, `search-form.tsx`, `tebex-html.tsx`, `toast-provider.tsx`, `player-avatar.tsx`, `value-proposition.tsx`, `category-showcase.tsx`, `closing-cta.tsx`).
 
 Every component takes its data as props — none of them fetch, none of them reach into global state (see Architectural Rules → Separation of concerns).
 
