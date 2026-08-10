@@ -99,7 +99,7 @@ it actually matters when you're changing that code.
   string values, if any, should trigger switching the recipient input from
   a username to a platform ID, and guessing that string match risks
   silently misrouting a real gift. Deliberately left unverified/unwired
-  rather than guessed — see `ROADMAP.md`'s Phase 8.1 Known Unknowns entry.
+  rather than guessed.
 - **`description` fields are HTML, not plain text** — confirmed live on
   `Webstore`, `Category`, and `Package`: the dashboard's rich text editor
   produces real markup (e.g. `"<p>...</p>"`, `<strong>`, `<a href>`), not

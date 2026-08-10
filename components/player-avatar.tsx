@@ -4,9 +4,9 @@ import Image from "next/image";
  * Renders nothing outside a Minecraft store: Steam avatars require calling
  * Steam's own Web API with a server-held key just to resolve a profile image
  * URL, and FiveM has no equivalent per-player image source at all — neither
- * is implemented (see ROADMAP.md 14.2). Minecraft's case needs no server
- * round-trip or secret: mc-heads.net renders a face straight from a
- * username, which is the only player identifier this app ever holds.
+ * is implemented. Minecraft's case needs no server round-trip or secret:
+ * mc-heads.net renders a face straight from a username, which is the only
+ * player identifier this app ever holds.
  *
  * mc-heads.net was chosen over the alternatives after checking each
  * directly: crafatar.com (the best-known option) returned a live HTTP 521

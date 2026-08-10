@@ -23,6 +23,15 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Every route fetches live data from your Tebex account, so `TEBEX_PUBLIC_TOKEN` must be set for the app to render at all — there's no mock/offline mode.
 
+### Homepage modes
+
+The homepage (`/`) is the one exception to "every route shows live catalog data," controlled by `HOMEPAGE_MODE`:
+
+- **`template` (default — same as leaving it unset)** — the out-of-the-box first-run state for a freshly-cloned store: a token is set, but the catalog usually isn't populated yet. Shows your store's name/description in the hero, plus a generic getting-started placeholder instead of live categories/packages.
+- **`storefront`** — renders your actual categories and packages inline on the homepage, with previews, pricing, and quick-add. Switch to this once you've built out your store's catalog: set `HOMEPAGE_MODE=storefront`.
+
+This only affects `/` — the header/footer (and every other route: `/category/[id]`, `/package/[id]`, `/search`, `/cart`, ...) always fetch and render live data regardless of this setting, so `TEBEX_PUBLIC_TOKEN` is required either way.
+
 ## Scripts
 
 | Command | Does |

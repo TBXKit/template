@@ -71,7 +71,7 @@ async function ExternalProviderLinks({ next }: { next: string }) {
   // external-provider redirect: doing so would need to read and clear a
   // cookie on the way back in, which Next.js only allows from a Server
   // Action or Route Handler — and this app deliberately has neither (see
-  // AGENTS.md's Architecture section). A visitor signing in this way just
+  // AGENTS.md's Non-Negotiable Constraints). A visitor signing in this way just
   // retries the add manually once they're back.
   const returnUrl = `${SITE_URL}${next}`;
   const providers = await getBasketAuthProviders(basket.ident, returnUrl);

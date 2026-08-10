@@ -11,7 +11,7 @@ import { logger } from "@/lib/logger";
  * `console.error(error)` in the browser console that no one but the
  * visitor would ever see.
  *
- * Only `message`/`digest`/`name` are forwarded, not `error.stack` — Next.js
+ * Only `message`/`digest`/`boundary` are forwarded, not `error.stack` — Next.js
  * already strips stack traces from what a Client Component receives in
  * production, and `digest` is the mechanism Next.js provides specifically
  * to correlate a visitor-facing error back to the full server-side error it
