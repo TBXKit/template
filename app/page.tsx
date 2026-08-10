@@ -15,7 +15,7 @@ export default async function HomePage() {
         description={webstore.description || undefined}
       />
       <div className="mx-auto max-w-6xl px-6 py-16">
-        <CategoryGrid categories={categories} />
+        <CategoryGrid categories={categories} currency={webstore.currency} />
       </div>
     </>
   );

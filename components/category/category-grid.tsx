@@ -1,9 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
+import { PackageCard } from "@/components/package/package-card";
 import { TebexHtml } from "@/components/tebex-html";
 import type { Category } from "@/lib/tebex/types";
 
-export function CategoryGrid({ categories }: { categories: Category[] }) {
+// How many packages a category shows inline on the homepage before handing
+// off to its own /category/[id] page for the rest — enough to fill one row
+// of the grid below at the desktop breakpoint.
+const PREVIEW_LIMIT = 3;
+
+export function CategoryGrid({
+  categories,
+  currency,
+}: {
+  categories: Category[];
+  currency: string;
+}) {
   if (categories.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border px-6 py-12 text-center text-sm text-muted-foreground">
@@ -13,52 +25,79 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="flex flex-col gap-16">
       {categories.map((category) => (
-        <CategoryCard key={category.id} category={category} />
+        <CategorySection
+          key={category.id}
+          category={category}
+          currency={currency}
+        />
       ))}
     </div>
   );
 }
 
-// Only ever rendered as one tile of the grid above — not exported, since
-// nothing else in the app shows a category outside this context.
-function CategoryCard({ category }: { category: Category }) {
+// Only ever rendered as one section of the list above — not exported, since
+// nothing else in the app shows a category this way outside the homepage.
+function CategorySection({
+  category,
+  currency,
+}: {
+  category: Category;
+  currency: string;
+}) {
+  const preview = category.packages.slice(0, PREVIEW_LIMIT);
+  const remaining = category.packages.length - preview.length;
+
   return (
-    <Link
-      href={`/category/${category.id}`}
-      className="group flex flex-col rounded-lg border border-border bg-card transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-    >
-      {/*
-        overflow-hidden lives here (the image wrapper), not on the outer
-        Link, so it only clips the image's rounded corners/hover-scale —
-        putting it on the Link itself would also clip its own focus
-        outline, making keyboard focus nearly invisible on this card.
-      */}
-      <div className="relative aspect-video w-full overflow-hidden rounded-t-lg bg-muted">
-        {category.image_url ? (
-          <Image
-            src={category.image_url}
-            alt=""
-            fill
-            unoptimized
-            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-            className="object-cover transition-transform group-hover:scale-105"
-          />
+    <section>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <Link
+          href={`/category/${category.id}`}
+          className="group flex items-center gap-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          {category.image_url ? (
+            // alt="" is safe here: the category name right next to it is
+            // always-visible text carrying the same information.
+            <span className="relative block h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-muted">
+              <Image
+                src={category.image_url}
+                alt=""
+                fill
+                unoptimized
+                sizes="40px"
+                className="object-cover"
+              />
+            </span>
+          ) : null}
+          <h2 className="text-xl font-medium text-foreground group-hover:text-primary">
+            {category.name}
+          </h2>
+        </Link>
+        {remaining > 0 ? (
+          <Link
+            href={`/category/${category.id}`}
+            className="text-sm text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            View all {category.packages.length} packages →
+          </Link>
         ) : null}
       </div>
-      <div className="flex flex-1 flex-col p-6">
-        <h3 className="text-lg font-medium text-card-foreground">
-          {category.name}
-        </h3>
-        {category.description ? (
-          <TebexHtml html={category.description} className="mt-2 max-w-none" />
-        ) : null}
-        <span className="mt-4 text-sm text-muted-foreground">
-          {category.packages.length}{" "}
-          {category.packages.length === 1 ? "package" : "packages"}
-        </span>
-      </div>
-    </Link>
+      {category.description ? (
+        <TebexHtml html={category.description} className="mt-2 max-w-none" />
+      ) : null}
+
+      {preview.length > 0 ? (
+        <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {preview.map((pkg) => (
+            <PackageCard key={pkg.id} pkg={pkg} currency={currency} />
+          ))}
+        </div>
+      ) : (
+        <div className="mt-6 rounded-lg border border-dashed border-border px-6 py-12 text-center text-sm text-muted-foreground">
+          No packages in this category yet.
+        </div>
+      )}
+    </section>
   );
 }
