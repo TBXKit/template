@@ -1,35 +1,9 @@
 import { CategoryGrid } from "@/components/category/category-grid";
-import { GettingStarted } from "@/components/getting-started";
 import { Hero } from "@/components/hero";
+import { StorefrontIntro } from "@/components/storefront-intro";
 import { getCategories, getWebstore } from "@/lib/tebex";
 
 export default async function HomePage() {
-  // Defaults to template mode: this project ships as a fork-and-configure
-  // template, so a first clone (token set, catalog usually not populated
-  // yet) should show a generic placeholder rather than an empty/broken
-  // storefront render. Set HOMEPAGE_MODE=storefront once the store's
-  // catalog is built out. See README's "Homepage modes".
-  if (process.env.HOMEPAGE_MODE !== "storefront") {
-    const webstore = await getWebstore();
-    return (
-      <>
-        <Hero
-          title={webstore.name}
-          // A fresh store usually has no description set yet — unlike
-          // storefront mode below, template mode substitutes a generic
-          // tagline instead of leaving the hero without one.
-          description={
-            webstore.description ||
-            "A fresh Tebex storefront, ready for your catalog."
-          }
-        />
-        <div className="mx-auto max-w-6xl px-6 py-16">
-          <GettingStarted />
-        </div>
-      </>
-    );
-  }
-
   const [webstore, categories] = await Promise.all([
     getWebstore(),
     getCategories(),
@@ -41,7 +15,8 @@ export default async function HomePage() {
         title={webstore.name}
         description={webstore.description || undefined}
       />
-      <div className="mx-auto max-w-6xl px-6 py-16">
+      <div className="mx-auto flex max-w-6xl flex-col gap-12 px-6 py-16">
+        <StorefrontIntro storeName={webstore.name} />
         <CategoryGrid categories={categories} currency={webstore.currency} />
       </div>
     </>

@@ -337,7 +337,7 @@ A single Server Action gets its own file, named `<verb>-action.ts` (`add-to-bask
 
 ## Component organization
 
-Components are grouped by Tebex domain where a domain has more than one related component — `components/category/`, `components/package/`, `components/basket/`, `components/auth/`. Components without siblings stay as flat files at the top of `components/` (`header.tsx`, `footer.tsx`, `hero.tsx`, `breadcrumbs.tsx`, `store-disabled-banner.tsx`, `search-form.tsx`, `tebex-html.tsx`, `toast-provider.tsx`, `player-avatar.tsx`, `getting-started.tsx`).
+Components are grouped by Tebex domain where a domain has more than one related component — `components/category/`, `components/package/`, `components/basket/`, `components/auth/`. Components without siblings stay as flat files at the top of `components/` (`header.tsx`, `footer.tsx`, `hero.tsx`, `breadcrumbs.tsx`, `store-disabled-banner.tsx`, `search-form.tsx`, `tebex-html.tsx`, `toast-provider.tsx`, `player-avatar.tsx`, `storefront-intro.tsx`).
 
 Every component takes its data as props — none of them fetch, none of them reach into global state (see Architectural Rules → Separation of concerns).
 
@@ -369,7 +369,7 @@ No Route Handlers, middleware, or webhook endpoints exist in this app (see Non-N
 
 # Environment & Configuration
 
-- `TEBEX_PUBLIC_TOKEN` (required — every route fetches from Tebex at request/build time and throws if it's unset), `SITE_URL` (optional, defaults to `http://localhost:3000`), `DISCORD_URL` (optional, shown in the footer only when set), `HOMEPAGE_MODE` (optional, defaults to `template` — controls only what `/` renders; see `app/page.tsx` and README's *Homepage modes*). Documented in `.env.example`.
+- `TEBEX_PUBLIC_TOKEN` (required — every route fetches from Tebex at request/build time and throws if it's unset), `SITE_URL` (optional, defaults to `http://localhost:3000`), `DISCORD_URL` (optional, shown in the footer only when set). Documented in `.env.example`.
 - Biome (`biome.json`) is the linter and formatter — `npm run lint` (`biome check`) and `npm run format` (`biome format --write`). No separate ESLint/Prettier config.
 - `.gitattributes` pins text files to LF. Without it, `npm run lint` fails on a fresh Windows checkout because Biome expects LF but Windows checks out CRLF by default.
 - Each route delegates its presentational markup to a component rather than inlining JSX in `page.tsx` — the page's job is fetching data, resolving not-found cases, and composing components inside the shared `mx-auto max-w-6xl px-6 py-16` wrapper. A non-trivial data transformation that isn't fetching or composing (e.g. JSON-LD construction) lives in a small nearby helper file, not inline in `page.tsx`.
