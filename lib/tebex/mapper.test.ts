@@ -917,7 +917,7 @@ describe("mapBasket — adversarial input", () => {
 
   it("never mutates its input", () => {
     const raw = buildRawBasket();
-    const snapshot = JSON.parse(JSON.stringify(raw));
+    const snapshot = structuredClone(raw);
 
     mapBasket(raw);
 
@@ -1060,7 +1060,7 @@ describe("mapWebstore — adversarial input", () => {
 
   it("never mutates its input", () => {
     const raw = buildRawWebstore();
-    const snapshot = JSON.parse(JSON.stringify(raw));
+    const snapshot = structuredClone(raw);
 
     mapWebstore(raw);
 
@@ -1174,7 +1174,7 @@ describe("mapCategory — adversarial and malformed nested data", () => {
 
   it("never mutates its input, including nested package objects", () => {
     const raw = buildRawCategory({ packages: [buildRawPackage()] });
-    const snapshot = JSON.parse(JSON.stringify(raw));
+    const snapshot = structuredClone(raw);
 
     mapCategory(raw);
 
@@ -1343,7 +1343,7 @@ describe("mapPackage — adversarial input", () => {
 
   it("never mutates its input", () => {
     const raw = buildRawPackage();
-    const snapshot = JSON.parse(JSON.stringify(raw));
+    const snapshot = structuredClone(raw);
 
     mapPackage(raw);
 

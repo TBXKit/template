@@ -29,6 +29,23 @@ export async function performAddToBasket({
   variableData?: Record<string, string>;
   giftUsername?: string;
 }): Promise<AddToBasketResult> {
+  // A Server Action is a public RPC endpoint (see add-to-basket-action.ts's
+  // file-level comment) — the button's own onChange guard stops the UI from
+  // producing an invalid quantity, but a direct call to this function (or
+  // the action wrapping it) can still supply anything. Checked before the
+  // try block below: this is an input-shape problem, not a Tebex API
+  // failure, so it doesn't belong in that block's error handling/logging.
+  if (!Number.isFinite(quantity) || quantity < 1) {
+    logger.warn(
+      { packageId, quantity },
+      "Rejected add-to-basket: invalid quantity",
+    );
+    return {
+      success: false,
+      error: "Please enter a valid quantity of 1 or more.",
+    };
+  }
+
   try {
     // The UI never lets a visitor submit anything but 1 when the package
     // disables quantity selection, but this can be called with any

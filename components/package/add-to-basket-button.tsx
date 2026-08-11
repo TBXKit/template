@@ -69,7 +69,18 @@ export function AddToBasketButton({
               step={1}
               required
               value={quantity}
-              onChange={(event) => setQuantity(Number(event.target.value))}
+              onChange={(event) => {
+                // Number("") is 0, Number("abc") is NaN — both would
+                // otherwise flow into the controlled `value` above (showing
+                // a literal "NaN") and, worse, into the basket-add request,
+                // since JSON.stringify({quantity: NaN}) serializes to
+                // `null`. Ignore anything that isn't a valid quantity
+                // instead of committing it to state.
+                const value = Number(event.target.value);
+                if (Number.isFinite(value) && value >= 1) {
+                  setQuantity(value);
+                }
+              }}
               aria-label="Quantity"
               className="w-20 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
             />

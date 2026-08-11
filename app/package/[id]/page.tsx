@@ -44,7 +44,15 @@ export default async function PackagePage({
       <script
         type="application/ld+json"
         // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD built from server-fetched Tebex data, not user input
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+        dangerouslySetInnerHTML={{
+          // pkg.name/pkg.description are store-owner-authored dashboard
+          // content (see the doc comment on Package.description in
+          // lib/tebex/types.ts) — "not user input" doesn't mean "can't
+          // contain `</script>`". Escaping `<` prevents that sequence from
+          // closing this script tag early and having the remainder parsed
+          // as new HTML.
+          __html: JSON.stringify(productJsonLd).replace(/</g, "\\u003c"),
+        }}
       />
       <Breadcrumbs
         items={[

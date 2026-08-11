@@ -5,10 +5,12 @@ import { AddToBasketButton } from "./add-to-basket-button";
 import { PackageBadge } from "./package-badge";
 import { PackagePrice } from "./package-price";
 
+const expirationFormatter = new Intl.DateTimeFormat(undefined, {
+  dateStyle: "long",
+});
+
 function formatExpiration(expirationDate: string): string {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "long" }).format(
-    new Date(expirationDate),
-  );
+  return expirationFormatter.format(new Date(expirationDate));
 }
 
 export function PackageDetail({
