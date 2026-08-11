@@ -50,13 +50,13 @@ it actually matters when you're changing that code.
   user-safe `detail` message** (e.g. `"The selected coupon code is
   invalid."`), consistently across all six apply/remove endpoints — unlike
   categories/packages, which each use a different non-standard "not found"
-  status. `resolveTebexResponse` (`client.ts`) now extracts this `detail`
-  and throws with it instead of a generic message, since Phase 6 needs to
-  surface it directly to the visitor. Add a store's own login requirement
-  before this: `POST /baskets/{ident}/packages` (not the promo-code
+  status. `resolveTebexResponse` (`client.ts`) extracts this `detail` and
+  throws with it instead of a generic message, since it needs to be
+  surfaced directly to the visitor. Separately, a store's own login
+  requirement: `POST /baskets/{ident}/packages` (not the promo-code
   endpoints) can independently return `422` with `"User must login before
-  adding packages to basket"` for username-auth stores — a Phase 7 concern,
-  unrelated to the promo-code endpoints above.
+  adding packages to basket"` for username-auth stores, unrelated to the
+  promo-code endpoints above.
 - **A username-auth store's basket must be *created* with a `username`** —
   there's no endpoint to attach one afterward. Confirmed live: `POST
   /baskets {"username": "..."}` immediately populates `Basket.username`/
@@ -79,7 +79,7 @@ it actually matters when you're changing that code.
   directly in the *same* add-to-basket request as `package_id`/`quantity`;
   Tebex resolves it server-side. Neither field is declared in the generated
   schema's `addBasketPackage` requestBody (same gap as `variable_data`). An
-  unresolvable target 400s with a specific `"User not found"`-style
+  unresolvable target 422s with a specific `"User not found"`-style
   `detail`. See `addPackageToBasket`'s doc comment in `lib/tebex/index.ts`.
   **Correction (previously stated backwards in this file):** per Tebex's
   docs, `target_username_id` — a platform identifier such as a Minecraft

@@ -38,7 +38,7 @@ Open [http://localhost:3000](http://localhost:3000). Every route fetches live da
 
 ## Testing
 
-Tests run on [Vitest](https://vitest.dev), with [React Testing Library](https://testing-library.com/react) for component behavior and [jsdom](https://github.com/jsdom/jsdom) as the DOM environment. Configuration lives in `vitest.config.mts` (test runner + the `@/` path alias, matching `tsconfig.json`) and `vitest.setup.ts` (registers `@testing-library/jest-dom`'s matchers).
+Tests run on [Vitest](https://vitest.dev), with [React Testing Library](https://testing-library.com/react) for component behavior and [jsdom](https://github.com/jsdom/jsdom) as the DOM environment. Configuration lives in `vitest.config.mts` (test runner + the `@/` path alias, matching `tsconfig.json`) and `vitest.setup.ts` (registers `@testing-library/jest-dom`'s matchers, the global `afterEach(cleanup)`, and a `window.matchMedia` polyfill jsdom doesn't provide on its own).
 
 ```bash
 npm run test        # run once

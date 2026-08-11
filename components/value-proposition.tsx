@@ -13,9 +13,9 @@ export function ValueProposition() {
       </h2>
       {/*
         marker:font-mono/marker:text-primary restyles the bullet itself —
-        a small "status readout" touch (see AGENTS.md session notes: this
-        is homepage-only for now, PackagePrice/PackageCard elsewhere stay
-        plain sans until a deliberate follow-up extends the mono treatment).
+        a small "status readout" touch. This is homepage-only for now;
+        PackagePrice/PackageCard elsewhere stay plain sans until a
+        deliberate follow-up extends the mono treatment.
       */}
       <ul className="flex list-disc flex-col gap-2 pl-5 text-foreground marker:font-mono marker:text-primary">
         {/* Replace these with real reasons — e.g. delivery speed, checkout
