@@ -18,7 +18,7 @@ export function CategoryShowcase({
 }) {
   return (
     <div className="flex flex-col gap-6">
-      <h2 className="text-2xl font-semibold text-foreground">
+      <h2 className="text-balance text-2xl font-semibold tracking-tight text-foreground">
         Shop our packages
       </h2>
       <CategoryGrid categories={categories} currency={currency} />

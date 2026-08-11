@@ -17,6 +17,9 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
 
+  --color-accent-secondary: var(--accent-secondary);
+  --color-accent-secondary-foreground: var(--accent-secondary-foreground);
+
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
@@ -63,4 +66,68 @@ body {
   --tw-prose-pre-bg: var(--muted);
   --tw-prose-th-borders: var(--border);
   --tw-prose-td-borders: var(--border);
+}
+
+/*
+ * .hud-frame — the storefront's one signature element: two opposing
+ * corner brackets (a game-HUD "selected slot" / viewfinder mark), drawn
+ * from --primary so it repaints automatically on any theme swap. Applied
+ * narrowly (hero, closing CTA) rather than to every section — see the
+ * comments in hero.tsx/closing-cta.tsx for why. On :hover/:focus-within
+ * the brackets nudge outward slightly; reduced-motion drops the
+ * transition (the state still changes, just without the animated step).
+ */
+@layer components {
+  .hud-frame {
+    position: relative;
+  }
+
+  .hud-frame::before,
+  .hud-frame::after {
+    content: "";
+    position: absolute;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-color: var(--primary);
+    border-style: solid;
+    border-width: 0;
+    opacity: 0.7;
+    transition:
+      transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+  }
+
+  .hud-frame::before {
+    top: 0;
+    left: 0;
+    border-top-width: 2px;
+    border-left-width: 2px;
+  }
+
+  .hud-frame::after {
+    bottom: 0;
+    right: 0;
+    border-bottom-width: 2px;
+    border-right-width: 2px;
+  }
+
+  .hud-frame:hover::before,
+  .hud-frame:focus-within::before {
+    transform: translate(-3px, -3px);
+    opacity: 1;
+  }
+
+  .hud-frame:hover::after,
+  .hud-frame:focus-within::after {
+    transform: translate(3px, 3px);
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hud-frame::before,
+    .hud-frame::after {
+      transition: none;
+    }
+  }
 }

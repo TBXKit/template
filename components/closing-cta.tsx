@@ -8,8 +8,8 @@ import Link from "next/link";
  */
 export function ClosingCta() {
   return (
-    <div className="flex flex-col items-center gap-4 rounded-lg border border-dashed border-border px-6 py-12 text-center">
-      <p className="max-w-xl text-foreground">
+    <div className="hud-frame flex flex-col items-center gap-4 rounded-lg border border-border px-8 py-12 text-center">
+      <p className="max-w-xl text-balance text-foreground">
         {/* Replace with a real closing pitch — e.g. "Ready to level up?
             Grab a rank today." */}
         [Closing pitch goes here — give players a reason to buy now.]
