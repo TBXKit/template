@@ -61,6 +61,12 @@ No component changes are needed to change the look of the store.
 
 Store name, description, logo, and favicon are not theme tokens — they come from your Tebex account settings via the Headless API (`getWebstore()`) and are rendered wherever the storefront needs them (header, page titles, Open Graph tags). Change those at [creator.tebex.io](https://creator.tebex.io), not in `themes/*.css`.
 
+### Going further for your game
+
+`themes/default.css` ships one deliberately generic palette rather than guessing at your specific game's branding. Once you know what you're running, its token system is the intended place to layer that identity in — a bolder or different accent color, a tighter or looser type scale, imagery and iconography that match your game, all without touching a component.
+
+That's the same call already made for `components/player-avatar.tsx`: it renders a Minecraft head-render avatar keyed off `Webstore.platform_type`, and Steam/FiveM equivalents deliberately aren't built in — not an oversight, but a platform-specific decision left for whoever forks the template for that platform (see `AGENTS.md`'s Exception Process). Theming follows the same principle: platform- and game-specific visual decisions belong in your fork's copy of `themes/default.css`, not in the shared default this template ships with.
+
 ## How Tebex API types are generated
 
 `lib/tebex/generated/schema.ts` is generated from Tebex's published [Headless API OpenAPI spec](https://github.com/tebexio/TebexHeadless-OpenAPI) via [`openapi-typescript`](https://openapi-ts.dev/), and consumed through [`openapi-fetch`](https://openapi-ts.dev/openapi-fetch/) in `lib/tebex/client.ts`. It's fetched from Tebex's GitHub repo at generation time — the spec YAML itself isn't vendored into this repo.
