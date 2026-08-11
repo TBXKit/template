@@ -34,7 +34,7 @@ function buildCategory(overrides: Partial<Category> = {}): Category {
   };
 }
 
-describe("searchPackages", () => {
+describe("searchPackages — baseline behavior", () => {
   it("returns an empty array for a blank or whitespace-only query", () => {
     const categories = [
       buildCategory({ packages: [buildPackage({ name: "VIP Rank" })] }),
@@ -85,5 +85,117 @@ describe("searchPackages", () => {
 
   it("returns an empty array when there are no categories at all", () => {
     expect(searchPackages([], "anything")).toEqual([]);
+  });
+});
+
+describe("searchPackages — gaps closed vs. the old substring-only matcher", () => {
+  it("matches regardless of word order", () => {
+    const pkg = buildPackage({ name: "VIP Rank" });
+    const categories = [buildCategory({ packages: [pkg] })];
+
+    expect(searchPackages(categories, "rank vip")).toEqual([pkg]);
+  });
+
+  it("matches a simple plural query against a singular name", () => {
+    const pkg = buildPackage({ name: "VIP Rank" });
+    const categories = [buildCategory({ packages: [pkg] })];
+
+    expect(searchPackages(categories, "ranks")).toEqual([pkg]);
+  });
+
+  it("matches a plural formed by a silent-e word plus 's' (bundle/bundles)", () => {
+    const pkg = buildPackage({ name: "Emerald VIP Bundle" });
+    const categories = [buildCategory({ packages: [pkg] })];
+
+    expect(searchPackages(categories, "bundles")).toEqual([pkg]);
+  });
+
+  it("fuzzy-matches an adjacent-letter transposition typo", () => {
+    const pkg = buildPackage({ name: "VIP Rank" });
+    const categories = [buildCategory({ packages: [pkg] })];
+
+    expect(searchPackages(categories, "vpi rank")).toEqual([pkg]);
+  });
+
+  it("fuzzy-matches a missing-letter typo", () => {
+    const pkg = buildPackage({ name: "VIP Rank" });
+    const categories = [buildCategory({ packages: [pkg] })];
+
+    expect(searchPackages(categories, "rnk")).toEqual([pkg]);
+  });
+
+  it("does not fuzzy-match a genuinely unrelated short word", () => {
+    const pkg = buildPackage({ name: "VIP Rank" });
+    const categories = [buildCategory({ packages: [pkg] })];
+
+    expect(searchPackages(categories, "cat")).toEqual([]);
+  });
+
+  it("matches tokens that appear in the name but not contiguously", () => {
+    const pkg = buildPackage({ name: "Emerald VIP Bundle" });
+    const categories = [buildCategory({ packages: [pkg] })];
+
+    expect(searchPackages(categories, "emerald bundle")).toEqual([pkg]);
+  });
+
+  it("matches tokens present in the name in a different order", () => {
+    const pkg = buildPackage({ name: "Emerald VIP Bundle" });
+    const categories = [buildCategory({ packages: [pkg] })];
+
+    expect(searchPackages(categories, "bundle vip")).toEqual([pkg]);
+  });
+
+  it("matches against the package description when the name doesn't match", () => {
+    const pkg = buildPackage({
+      name: "Starter Kit",
+      description: "<p>Comes with a diamond sword and full armor set</p>",
+    });
+    const categories = [buildCategory({ packages: [pkg] })];
+
+    expect(searchPackages(categories, "armor")).toEqual([pkg]);
+    expect(searchPackages(categories, "diamond sword")).toEqual([pkg]);
+  });
+});
+
+describe("searchPackages — relevance ranking", () => {
+  it("ranks an exact phrase match in the name above a token-scattered match", () => {
+    const exactMatch = buildPackage({ id: 1, name: "VIP Rank" });
+    const scatteredMatch = buildPackage({
+      id: 2,
+      name: "Ultra VIP Ranking Bundle",
+    });
+    const categories = [
+      buildCategory({ packages: [exactMatch, scatteredMatch] }),
+    ];
+
+    expect(searchPackages(categories, "VIP Rank")).toEqual([
+      exactMatch,
+      scatteredMatch,
+    ]);
+  });
+
+  it("ranks a name match above a description-only match", () => {
+    const nameMatch = buildPackage({ id: 1, name: "Armor Bundle" });
+    const descriptionMatch = buildPackage({
+      id: 2,
+      name: "Starter Kit",
+      description: "<p>Includes a full suit of armor</p>",
+    });
+    const categories = [
+      buildCategory({ packages: [descriptionMatch, nameMatch] }),
+    ];
+
+    expect(searchPackages(categories, "armor")).toEqual([
+      nameMatch,
+      descriptionMatch,
+    ]);
+  });
+
+  it("requires every query token to match — a package matching only some tokens is excluded", () => {
+    const pkg = buildPackage({ name: "VIP Rank" });
+    const categories = [buildCategory({ packages: [pkg] })];
+
+    // "vip" matches, "spaceship" matches nothing in name or description.
+    expect(searchPackages(categories, "vip spaceship")).toEqual([]);
   });
 });
