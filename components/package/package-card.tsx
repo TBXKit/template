@@ -35,7 +35,7 @@ export function PackageCard({
     >
       <Link
         href={`/package/${pkg.id}`}
-        className={`flex flex-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+        className={`focus-ring flex flex-1 ${
           isList ? "flex-row items-center" : "flex-col"
         }`}
       >

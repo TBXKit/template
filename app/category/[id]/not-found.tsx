@@ -11,7 +11,7 @@ export default function CategoryNotFound() {
       </p>
       <Link
         href="/"
-        className="mt-6 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary"
+        className="focus-ring mt-6 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary"
       >
         Back to store
       </Link>

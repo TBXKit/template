@@ -1,3 +1,4 @@
+import DOMPurify from "isomorphic-dompurify";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Footer } from "@/components/footer";
@@ -21,12 +22,18 @@ const geistMono = Geist_Mono({
 
 export async function generateMetadata(): Promise<Metadata> {
   const webstore = await getWebstore();
+  // Webstore.description is HTML from the dashboard's rich text editor (see
+  // the doc comment on Webstore.description in lib/tebex/types.ts) — <meta
+  // description> and Open Graph description need plain text, unlike
+  // TebexHtml's rendering path elsewhere, which this doesn't touch.
+  const plainDescription = DOMPurify.sanitize(webstore.description, {
+    ALLOWED_TAGS: [],
+  }).trim();
   const description =
-    webstore.description ||
-    `Browse packages and categories at ${webstore.name}.`;
+    plainDescription || `Browse packages and categories at ${webstore.name}.`;
 
   return {
-    metadataBase: new URL(SITE_URL),
+    metadataBase: new URL(SITE_URL || "http://localhost:3000"),
     // Routes without their own generateMetadata (e.g. the homepage) inherit
     // `default` for <title>; routes that set their own `title` get it
     // wrapped by `template` instead.

@@ -58,7 +58,7 @@ async function ExternalProviderLinks({ next }: { next: string }) {
         </p>
         <button
           type="submit"
-          className="mt-3 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary"
+          className="focus-ring mt-3 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary"
         >
           Continue to sign in
         </button>
@@ -90,7 +90,7 @@ async function ExternalProviderLinks({ next }: { next: string }) {
         <li key={provider.name}>
           <a
             href={provider.url}
-            className="block rounded-lg border border-border px-4 py-2 text-center text-sm font-medium text-foreground transition-colors hover:border-primary"
+            className="focus-ring block rounded-lg border border-border px-4 py-2 text-center text-sm font-medium text-foreground transition-colors hover:border-primary"
           >
             Continue with {provider.name}
           </a>

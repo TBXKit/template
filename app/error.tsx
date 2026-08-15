@@ -32,7 +32,7 @@ export default function RouteError({
       <button
         type="button"
         onClick={() => reset()}
-        className="mt-6 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary"
+        className="focus-ring mt-6 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary"
       >
         Try again
       </button>

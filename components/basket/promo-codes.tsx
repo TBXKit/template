@@ -123,7 +123,7 @@ function CodeApplyForm({
         <button
           type="submit"
           disabled={isPending}
-          className="shrink-0 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary disabled:opacity-60"
+          className="focus-ring shrink-0 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary disabled:opacity-60"
         >
           {isPending ? "Applying…" : "Apply"}
         </button>
@@ -159,7 +159,7 @@ function AppliedCode({
           <button
             type="submit"
             disabled={isPending}
-            className="text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline disabled:opacity-60"
+            className="focus-ring rounded-sm text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline disabled:opacity-60"
           >
             {isPending ? "Removing…" : "Remove"}
           </button>

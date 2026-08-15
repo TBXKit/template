@@ -69,6 +69,27 @@ body {
 }
 
 /*
+ * .focus-ring — the storefront's one keyboard-focus treatment, kept as a
+ * shared utility rather than repeated per component now that it's needed
+ * identically across every domain folder (basket/, package/, auth/, plus
+ * flat components and app/ routes) — past the "update the one place this
+ * concept lives" threshold AGENTS.md's Styling section describes. Explicit
+ * per Accessibility Requirements: the browser's unstyled default focus ring
+ * is exactly what this project's Tailwind reset can suppress or render at
+ * low contrast against a given theme.
+ */
+@layer components {
+  .focus-ring {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+
+  .focus-ring:focus-visible {
+    outline-color: var(--primary);
+  }
+}
+
+/*
  * .hud-frame — the storefront's one signature element: two opposing
  * corner brackets (a game-HUD "selected slot" / viewfinder mark), drawn
  * from --primary so it repaints automatically on any theme swap. Applied

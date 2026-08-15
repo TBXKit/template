@@ -65,7 +65,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             type="button"
             onClick={() => setToast(null)}
             aria-label="Dismiss"
-            className="shrink-0 leading-none text-muted-foreground hover:text-foreground"
+            className="focus-ring shrink-0 rounded-sm leading-none text-muted-foreground hover:text-foreground"
           >
             ×
           </button>

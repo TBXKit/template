@@ -54,7 +54,7 @@ function CategorySection({
       <div className="flex flex-wrap items-end justify-between gap-4">
         <Link
           href={`/category/${category.id}`}
-          className="group flex items-center gap-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="focus-ring group flex items-center gap-3"
         >
           {category.image_url ? (
             // alt="" is safe here: the category name right next to it is
@@ -77,7 +77,7 @@ function CategorySection({
         {remaining > 0 ? (
           <Link
             href={`/category/${category.id}`}
-            className="text-sm text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="focus-ring text-sm text-muted-foreground hover:text-foreground"
           >
             View all {category.packages.length} packages →
           </Link>

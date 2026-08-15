@@ -94,7 +94,7 @@ export function AddToBasketButton({
                   type="button"
                   onClick={() => setQuantity(preset)}
                   aria-pressed={quantity === preset}
-                  className={`rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
+                  className={`focus-ring rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
                     quantity === preset
                       ? "border-primary text-primary"
                       : "border-border text-muted-foreground hover:border-primary"
@@ -109,7 +109,7 @@ export function AddToBasketButton({
         <button
           type="submit"
           disabled={isPending || !allVariablesFilled || !giftTargetFilled}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+          className="focus-ring rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
         >
           {isPending ? "Adding…" : "Add to basket"}
         </button>

@@ -49,7 +49,7 @@ export default async function AccountPage() {
       <form action={logoutAction} className="mt-6">
         <button
           type="submit"
-          className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary"
+          className="focus-ring rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary"
         >
           Logout
         </button>

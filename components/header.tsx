@@ -31,7 +31,7 @@ export function Header({
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link
           href="/"
-          className="flex items-center gap-2 text-lg font-semibold text-foreground"
+          className="focus-ring flex items-center gap-2 rounded-sm text-lg font-semibold text-foreground"
         >
           {webstore.logo ? (
             <Image
@@ -52,7 +52,7 @@ export function Header({
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm text-muted-foreground hover:text-foreground"
+                className="focus-ring rounded-sm text-sm text-muted-foreground hover:text-foreground"
               >
                 {link.label}
               </Link>
@@ -63,7 +63,7 @@ export function Header({
 
           <Link
             href="/cart"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+            className="focus-ring flex items-center gap-1.5 rounded-sm text-sm text-muted-foreground hover:text-foreground"
           >
             Cart
             {itemCount > 0 ? (
@@ -87,7 +87,7 @@ export function Header({
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Link
                   href="/account"
-                  className="flex items-center gap-1.5 hover:text-foreground"
+                  className="focus-ring flex items-center gap-1.5 rounded-sm hover:text-foreground"
                 >
                   <PlayerAvatar
                     username={username}
@@ -98,7 +98,7 @@ export function Header({
                 <form action={logoutAction}>
                   <button
                     type="submit"
-                    className="underline-offset-2 hover:text-foreground hover:underline"
+                    className="focus-ring rounded-sm underline-offset-2 hover:text-foreground hover:underline"
                   >
                     Logout
                   </button>
@@ -107,7 +107,7 @@ export function Header({
             ) : (
               <Link
                 href="/login"
-                className="text-sm text-muted-foreground hover:text-foreground"
+                className="focus-ring rounded-sm text-sm text-muted-foreground hover:text-foreground"
               >
                 Login
               </Link>
@@ -115,7 +115,7 @@ export function Header({
           </div>
 
           <details className="md:hidden">
-            <summary className="cursor-pointer list-none text-sm text-muted-foreground">
+            <summary className="focus-ring cursor-pointer list-none rounded-sm text-sm text-muted-foreground">
               Menu
             </summary>
             <nav
@@ -127,7 +127,7 @@ export function Header({
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-sm text-muted-foreground hover:text-foreground"
+                  className="focus-ring rounded-sm text-sm text-muted-foreground hover:text-foreground"
                 >
                   {link.label}
                 </Link>
@@ -137,7 +137,7 @@ export function Header({
                   <>
                     <Link
                       href="/account"
-                      className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+                      className="focus-ring flex items-center gap-1.5 rounded-sm text-sm text-muted-foreground hover:text-foreground"
                     >
                       <PlayerAvatar
                         username={username}
@@ -148,7 +148,7 @@ export function Header({
                     <form action={logoutAction}>
                       <button
                         type="submit"
-                        className="text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                        className="focus-ring rounded-sm text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
                       >
                         Logout
                       </button>
@@ -157,7 +157,7 @@ export function Header({
                 ) : (
                   <Link
                     href="/login"
-                    className="text-sm text-muted-foreground hover:text-foreground"
+                    className="focus-ring rounded-sm text-sm text-muted-foreground hover:text-foreground"
                   >
                     Login
                   </Link>

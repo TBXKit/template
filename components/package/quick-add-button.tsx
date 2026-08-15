@@ -38,7 +38,7 @@ export function QuickAddButton({ packageId }: { packageId: number }) {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary disabled:opacity-60"
+        className="focus-ring w-full rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary disabled:opacity-60"
       >
         {isPending ? "Adding…" : state?.success ? "Added" : "Add to basket"}
       </button>

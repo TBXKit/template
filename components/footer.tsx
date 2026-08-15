@@ -23,7 +23,10 @@ export function Footer({
         <div className="flex flex-wrap items-center gap-4">
           {platformType ? <span>{platformType}</span> : null}
           {discordUrl ? (
-            <a href={discordUrl} className="hover:text-foreground">
+            <a
+              href={discordUrl}
+              className="focus-ring rounded-sm hover:text-foreground"
+            >
               Join our Discord
             </a>
           ) : null}
@@ -58,7 +61,7 @@ export function Footer({
               <a
                 key={link.href}
                 href={link.href}
-                className="hover:text-foreground"
+                className="focus-ring rounded-sm hover:text-foreground"
               >
                 {link.label}
               </a>

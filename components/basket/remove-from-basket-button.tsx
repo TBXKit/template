@@ -14,7 +14,7 @@ export function RemoveFromBasketButton({ packageId }: { packageId: number }) {
       <button
         type="submit"
         disabled={isPending}
-        className="text-sm text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline disabled:opacity-60"
+        className="focus-ring rounded-sm text-sm text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline disabled:opacity-60"
       >
         {isPending ? "Removing…" : "Remove"}
       </button>
