@@ -40,7 +40,7 @@ async function runPromoCodeAction(
       throw new Error("No basket to apply this to");
     }
     await mutate(basket.ident);
-    logger.info(
+    logger.debug(
       { basketIdent: redactBasketIdent(basket.ident), event },
       "Promo code updated",
     );

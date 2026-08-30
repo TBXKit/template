@@ -11,13 +11,25 @@ import pino from "pino";
  * doesn't survive Next.js's bundling. Plain synchronous JSON-to-stdout has
  * no such caveat and needs nothing from the Next.js build.
  *
- * Level defaults to "debug" outside production and "info" in production,
- * overridable via `LOG_LEVEL` for local troubleshooting without a redeploy.
+ * **Level defaults to "debug" in development and "warn" in production** —
+ * normal production operation logs nothing, so retained log volume tracks
+ * problems, not traffic. `LOG_LEVEL` overrides without a redeploy. The tiers:
+ *
+ *   error  a failure that isn't the visitor's fault or isn't self-explanatory
+ *   warn   an expected, recoverable, visitor-caused failure worth seeing in
+ *          aggregate (bad coupon, unresolvable gift target, a crafted
+ *          invalid request)
+ *   info   a completed purchase — the only routine event kept; set
+ *          LOG_LEVEL=info in production for an opt-in purchase trail (Tebex
+ *          still holds the authoritative record)
+ *   debug  every other routine visitor action + internal diagnostics
+ *
+ * See AGENTS.md → Logging for which call site sits at which level.
  */
 export const logger = pino({
   level:
     process.env.LOG_LEVEL ??
-    (process.env.NODE_ENV === "production" ? "info" : "debug"),
+    (process.env.NODE_ENV === "production" ? "warn" : "debug"),
   // Defense-in-depth: every call site below chooses its own fields, but
   // redact any of these common names if one ever gets passed in by mistake,
   // rather than relying solely on call-site discipline.

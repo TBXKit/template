@@ -1,5 +1,4 @@
 import createClient from "openapi-fetch";
-import { logger } from "@/lib/logger";
 import type { paths } from "./generated/schema";
 
 // The live Tebex Headless API. Overridable via TEBEX_API_BASE only so the
@@ -8,14 +7,6 @@ import type { paths } from "./generated/schema";
 const API_BASE =
   process.env.TEBEX_API_BASE?.replace(/\/$/, "") ??
   "https://headless.tebex.io/api";
-
-// The public storefront token is safe to expose (see TEBEX_PUBLIC_TOKEN's
-// own docs), but it still identifies this store's account, so debug logs
-// below redact it from the URL rather than assuming "public" means "fine to
-// repeat in every log line."
-function redactAccountToken(url: string): string {
-  return url.replace(/\/accounts\/[^/]+/, "/accounts/[redacted]");
-}
 
 function accountBaseUrl(): string {
   const token = process.env.TEBEX_PUBLIC_TOKEN;
@@ -90,24 +81,17 @@ export async function basketPackageRequest<T>(
  * Tebex doesn't consistently use 404) resolve to `null` instead of throwing,
  * so route handlers can call Next's `notFound()`. Any other non-OK response
  * throws, rather than being silently swallowed.
+ *
+ * Deliberately does not log: a per-request line here fires on every catalog
+ * read and every basket mutation — pure volume, no operator signal. A
+ * genuine failure is logged once, with business context, by the Server
+ * Action that catches the thrown error (see AGENTS.md → Logging).
  */
 export async function resolveTebexResponse<T>(
   result: Promise<TebexResult<T>>,
   notFoundStatuses: number[] = [404],
 ): Promise<T | null> {
   const { data, error, response } = await result;
-
-  // Every Tebex call funnels through here regardless of call site
-  // (tebexClient or basketPackageRequest), so this is the one place that
-  // can log request/response pairs for all of them without duplicating the
-  // same log call at every index.ts function. Deliberately excludes
-  // response bodies (may carry a visitor's username/basket contents) — the
-  // status/URL pair is enough to correlate against a specific failure
-  // without risking a sensitive payload in the logs.
-  logger.debug(
-    { url: redactAccountToken(response.url), status: response.status },
-    "Tebex API request",
-  );
 
   if (notFoundStatuses.includes(response.status)) {
     return null;

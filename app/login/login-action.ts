@@ -21,7 +21,8 @@ export async function loginAction(
   const next = String(formData.get("next") ?? "/");
 
   if (!username) {
-    logger.warn("Login rejected: no username submitted");
+    // Not logged: an empty required field is communicated by the returned
+    // error and the form UI, and the endpoint is trivially spammable.
     return { success: false, error: "Please enter a username." };
   }
 
@@ -30,7 +31,7 @@ export async function loginAction(
   // validates/creates the identity itself once a basket is created with it
   // (see lib/tebex/index.ts's createBasket).
   await setCurrentUsername(username);
-  logger.info({ username }, "Login succeeded");
+  logger.debug({ username }, "Login succeeded");
 
   // Replays the add-to-basket call that redirected here in the first place
   // (see add-to-basket-action.ts), if there was one. A failure here (e.g.

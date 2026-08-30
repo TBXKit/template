@@ -114,6 +114,8 @@ Tebex's basket-add endpoint appears to reject packages priced unusually high (li
 
 `npm run build` produces two things from one build: the normal `.next` production output, and — because `next.config.ts` sets `output: "standalone"` — a self-contained `.next/standalone` bundle. Neither deployment path below is more "correct" than the other; standalone exists for Docker specifically, it doesn't replace or require changing the normal one.
 
+**Logging.** In production the app logs only recoverable failures (`warn`) and errors — normal traffic produces no log lines, so retained volume tracks problems, not visits. Set `LOG_LEVEL=info` if you want a completed-purchase line as an audit trail, or `LOG_LEVEL=debug` to trace every visitor action while diagnosing something. See [`AGENTS.md`](AGENTS.md) → Logging.
+
 ### Node.js
 
 Any Next.js host works exactly as usual. See the [Next.js deployment docs](https://nextjs.org/docs/app/building-your-application/deploying) — the [Vercel Platform](https://vercel.com/new) is the path of least resistance.

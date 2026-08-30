@@ -60,7 +60,7 @@ export async function ensureBasket(): Promise<Basket> {
   // mechanical "use it if we have it" half.
   const username = store.get(USERNAME_COOKIE)?.value;
   const created = await createBasket(username);
-  logger.info(
+  logger.debug(
     { basketIdent: redactBasketIdent(created.ident), username },
     "Basket created",
   );

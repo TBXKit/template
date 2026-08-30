@@ -62,7 +62,7 @@ export async function performAddToBasket({
       variableData,
       giftUsername,
     );
-    logger.info(
+    logger.debug(
       {
         basketIdent: redactBasketIdent(basket.ident),
         packageId,

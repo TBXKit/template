@@ -349,11 +349,16 @@ A component that combines two domains' data (e.g., a package card showing whethe
 
 # Logging
 
-`lib/logger.ts` exports a single shared `pino` logger (`logger`) — never `console.log`/`console.error`/`console.warn`/`console.debug` anywhere in this codebase, including client-side error boundaries. No `pino-pretty`/`transport` — plain synchronous JSON to stdout, since pino's `transport` option spawns a worker thread that doesn't survive Next.js's bundling. Level defaults to `debug` outside production and `info` in production, overridable via `LOG_LEVEL`.
+`lib/logger.ts` exports a single shared `pino` logger (`logger`) — never `console.log`/`console.error`/`console.warn`/`console.debug` anywhere in this codebase, including client-side error boundaries. No `pino-pretty`/`transport` — plain synchronous JSON to stdout, since pino's `transport` option spawns a worker thread that doesn't survive Next.js's bundling. Level defaults to `debug` in development and **`warn` in production**, overridable via `LOG_LEVEL`. The production default is deliberately below `info`: normal operation logs nothing, so retained volume (which costs money) tracks problems, not traffic.
 
-**Levels, used consistently:** `debug` for developer diagnostics that fire on essentially every request (Tebex API request/response pairs, routing decisions like a login redirect) — noisy by design, meant to be filtered out in production. `info` for normal application events a visitor caused (basket created, package added/removed, promo code applied, login succeeded, logout, checkout completed). `warn` for expected, recoverable, visitor-caused failures (an unresolvable gift target, an invalid coupon/gift-card/creator-code — anywhere Tebex's own `detail` message is safe to surface directly). `error` for failures that aren't visitor-caused or aren't explained by a safe, specific message.
+**Levels, used consistently:**
 
-**Each failure is logged once, at the layer with the most context.** `resolveTebexResponse` logs every request at `debug` regardless of outcome — traffic visibility, not a failure signal — and does not also log at `warn`/`error` when it throws. The `warn`/`error` classification happens exactly once, at the Server Action that catches the error and already has the business context `client.ts` doesn't.
+- `error` — a failure that isn't the visitor's fault or isn't self-explanatory (a failed basket add/remove that carries no safe specific message; a client-side render error forwarded from `error.tsx`).
+- `warn` — an expected, recoverable, visitor-caused failure worth seeing in aggregate: an unresolvable gift target, an invalid coupon/gift-card/creator-code (anywhere Tebex's own `detail` message is safe to surface directly), or a request the UI can't produce (an out-of-range add-to-basket quantity — a sign of a crafted call). One line per fat-fingered input, not per request.
+- `info` — **a completed purchase, and nothing else.** It's the one routine event with lasting operational value. It stays off in production by default (level is `warn`); an operator who wants a purchase trail sets `LOG_LEVEL=info`, accepting that Tebex's dashboard, not this log, is the authoritative record.
+- `debug` — every other routine visitor action (basket created, package added/removed, promo code applied, login, logout, login-redirect) and internal diagnostics (a malformed pending-action cookie, a basket cookie pointing at an expired basket). Dev-only by default; none of it is prod signal.
+
+**Failures are logged once, at the layer with the most context — the Server Action that catches the thrown error and knows the business operation.** `client.ts`/`resolveTebexResponse` does **not** log: a per-request line there fires on every catalog read and basket mutation — pure volume, no operator signal — and it lacks the business context (`client.ts` sees an HTTP status; the Server Action knows it was "apply coupon" for a specific basket). Don't reintroduce request-level logging in the Tebex client.
 
 **Never log a basket `ident` in full** — use `redactBasketIdent` from `lib/logger.ts`. A basket ident is a bearer credential, the same trust level as a session cookie, not just an identifier.
 
@@ -363,7 +368,7 @@ A component that combines two domains' data (e.g., a package card showing whethe
 
 **Never log:** passwords (n/a — this app has none), auth tokens (redacted from logged URLs regardless of the public token's own "safe to expose" docs), cookies/session identifiers, emails, payment details. A visitor's username is logged as-is — already shown as normal UI in this app, not a secret.
 
-**Pure helpers in `lib/tebex/mapper.ts` deliberately have no logging.** They're called on every catalog render, are unit-tested as pure and deterministic, and their fallback-default behavior is the designed, constantly-exercised path for Tebex's everything-optional schema — not a rare exception. If a genuinely rare/severe malformation needs visibility, `client.ts`'s or a Server Action's existing logging is the right seam.
+**Pure helpers in `lib/tebex/mapper.ts` deliberately have no logging.** They're called on every catalog render, are unit-tested as pure and deterministic, and their fallback-default behavior is the designed, constantly-exercised path for Tebex's everything-optional schema — not a rare exception. If a genuinely rare/severe malformation needs visibility, a Server Action's existing `catch` is the right seam.
 
 No Route Handlers, middleware, or webhook endpoints exist in this app (see Non-Negotiable Constraints) — don't add logging infrastructure for them speculatively.
 

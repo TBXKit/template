@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
   // bundle with just the runtime dependencies Next.js actually traced, for
   // the Docker image to copy instead of the full node_modules. See Dockerfile.
   output: "standalone",
+  // Silence the per-request `GET /path 200 in Xms` line in `next dev` (and
+  // the e2e build). This is a dev-only Next.js feature — it has no effect on
+  // production output — but it removes a lot of local console noise. App
+  // logging goes through lib/logger.ts; see AGENTS.md → Logging.
+  logging: { incomingRequests: false },
 };
 
 export default nextConfig;

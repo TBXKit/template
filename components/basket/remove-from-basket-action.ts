@@ -22,7 +22,7 @@ export async function removeFromBasketAction(
     }
 
     await removePackageFromBasket(basket.ident, packageId);
-    logger.info(
+    logger.debug(
       { basketIdent: redactBasketIdent(basket.ident), packageId },
       "Package removed from basket",
     );
