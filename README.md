@@ -23,6 +23,22 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Every route fetches live data from your Tebex account, so `TEBEX_PUBLIC_TOKEN` must be set for the app to render at all — there's no mock/offline mode.
 
+Keep your real token in `.env.local` (git-ignored via `.env*`). Don't put it in a committed `.env`, and don't paste it into a shared checkout — while it's a *public*, storefront-scoped token, it still identifies your store's account.
+
+## Make this yours
+
+This template ships a deliberately generic store. To turn a fresh fork into your storefront:
+
+1. **Set `TEBEX_PUBLIC_TOKEN`** in `.env.local` (above) — nothing renders without it.
+2. **Set `SITE_URL`** to your deployed URL (no trailing slash). It's baked into `sitemap.xml`, `robots.txt`, and canonical/Open Graph metadata. Defaults to `http://localhost:3000`.
+3. **Set `DISCORD_URL`** (optional) — shown in the footer when present.
+4. **Reskin the theme**: copy `themes/default.css`, edit the CSS variables, and repoint the `@import` in `app/globals.css` (see [Theming](#theming)). No component changes needed.
+5. **Replace `app/favicon.ico`** with your own.
+6. **Rewrite the homepage placeholder copy**: `components/value-proposition.tsx` and `components/closing-cta.tsx` ship bracketed `[edit me]` text on purpose. The hero, category grid, and everything else is driven by your Tebex data — these two blocks are the only hand-written marketing copy.
+7. **Review the footer**: `components/footer.tsx` carries the Tebex merchant-of-record disclosure and legal links — confirm they're right for your store.
+
+Store name, description, logo, and package/category content all come from your Tebex dashboard via the Headless API — change those at [creator.tebex.io](https://creator.tebex.io), not in code.
+
 ## Scripts
 
 | Command | Does |
@@ -32,8 +48,10 @@ Open [http://localhost:3000](http://localhost:3000). Every route fetches live da
 | `npm run start` | Run a production build |
 | `npm run lint` | Biome check (lint + format check) |
 | `npm run format` | Biome format, writing fixes |
-| `npm run test` | Run the test suite once |
-| `npm run test:watch` | Run the test suite in watch mode |
+| `npm run typecheck` | `next typegen` + `tsc --noEmit` (no Tebex token needed) |
+| `npm run test` | Run the unit test suite once |
+| `npm run test:watch` | Run the unit test suite in watch mode |
+| `npm run test:e2e` | Run the Playwright end-to-end suite (see Testing) |
 | `npm run generate:tebex-types` | Regenerate `lib/tebex/generated/schema.ts` from Tebex's OpenAPI spec |
 
 ## Testing
@@ -45,7 +63,18 @@ npm run test        # run once
 npm run test:watch  # watch mode
 ```
 
-`test/` holds infrastructure-only tests (currently just a smoke test proving the setup works) — it is not where feature coverage belongs. As real coverage is added, tests should live next to the code they test: `lib/tebex/mapper.test.ts` beside `mapper.ts`, `components/package/package-price.test.tsx` beside `package-price.tsx`, and so on. See [`AGENTS.md`](AGENTS.md) for testing conventions.
+Unit tests live next to the code they test: `lib/tebex/mapper.test.ts` beside `mapper.ts`, `components/package/package-price.test.tsx` beside `package-price.tsx`, and so on. `test/` itself is reserved for cross-cutting infrastructure (the setup smoke test, and the end-to-end suite below). See [`AGENTS.md`](AGENTS.md) for testing conventions.
+
+### End-to-end
+
+`npm run test:e2e` runs [Playwright](https://playwright.dev) against a production build of the app, with every Tebex call pointed at a local fixture server (`test/e2e/fixture-server.mjs`) via `TEBEX_API_BASE`. It covers the async Server Component route layer that Vitest can't render, and is where ARIA roles / live regions / focus behaviour get verified in a real browser (see [`AGENTS.md`](AGENTS.md) → Testing Requirements). No Tebex token or network access is needed — the fixture replaces the live API entirely.
+
+```bash
+npx playwright install chromium   # one-time, downloads the browser
+npm run test:e2e
+```
+
+It is not wired into CI yet; a commented-out job stub sits in `.github/workflows/ci.yml`.
 
 ## Theming
 

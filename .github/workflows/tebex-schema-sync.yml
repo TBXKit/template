@@ -1,0 +1,50 @@
+name: Tebex schema sync
+
+# Regenerates lib/tebex/generated/schema.ts from Tebex's published OpenAPI
+# spec and opens a PR when it has drifted. Independent of the CI checks — this
+# is a maintenance signal, not a gate.
+#
+# Needs "Allow GitHub Actions to create and approve pull requests" enabled in
+# repo Settings > Actions > General for the default GITHUB_TOKEN to open the PR.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run generate:tebex-types
+
+      - name: Open PR on drift
+        uses: peter-evans/create-pull-request@v7
+        with:
+          add-paths: lib/tebex/generated/schema.ts
+          branch: chore/tebex-schema-sync
+          commit-message: "chore: regenerate Tebex Headless API types"
+          title: "chore: regenerate Tebex Headless API types"
+          body: |
+            Tebex's published Headless API OpenAPI spec has changed since the
+            last regeneration of `lib/tebex/generated/schema.ts`.
+
+            Before merging, re-check against the new schema:
+            - `lib/tebex/mapper.ts` — do any mapped fields need adjusting?
+            - `lib/tebex/types.ts` — any newly-needed field to surface?
+            - `lib/tebex/API_QUIRKS.md` — is a documented mismatch now fixed
+              upstream (or a new one introduced)?
+          labels: dependencies

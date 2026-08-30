@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Biome (lint + format check).
+      - run: npm run lint
+
+      # `next typegen` writes .next/types/** (route helpers like PageProps),
+      # which tsconfig.json includes; then a plain `tsc --noEmit`. Neither
+      # fetches Tebex data, so no TEBEX_PUBLIC_TOKEN is needed here.
+      - run: npm run typecheck
+
+      - run: npm run test
+
+  # End-to-end tests (Playwright + a local fixture Tebex server) run locally
+  # via `npm run test:e2e`. They need no secret to run in CI either — the
+  # fixture server replaces Tebex and TEBEX_PUBLIC_TOKEN=test is enough — so
+  # this job can be enabled later by uncommenting it.
+  #
+  # e2e:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22
+  #         cache: npm
+  #     - run: npm ci
+  #     - run: npx playwright install --with-deps chromium
+  #     - run: npm run test:e2e

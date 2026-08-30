@@ -39,6 +39,18 @@ function byNormalizedText(expected: string) {
     Array.from(element.children).every((child) => !hasTargetText(child));
 }
 
+// The matcher for "an element showing this formatted price". Always routed
+// through byNormalizedText: depending on the host's ICU version,
+// Intl.NumberFormat separates the currency symbol from the amount with a
+// narrow no-break space (U+202F) or a regular no-break space (U+00A0), and a
+// plain getByText(string) doesn't normalize the matcher side the way it
+// normalizes the DOM side — so an exact-string match spuriously fails even
+// though the rendered text is right. This bit USD once the dev/CI ICU started
+// emitting U+202F for the default locale.
+function priceMatcher(amount: number, currency = "USD") {
+  return byNormalizedText(formatExpected(amount, currency));
+}
+
 const defaultProps = {
   basePrice: 10,
   totalPrice: 10,
@@ -52,13 +64,13 @@ describe("PackagePrice — normal rendering", () => {
       <PackagePrice {...defaultProps} basePrice={19.99} totalPrice={19.99} />,
     );
 
-    expect(screen.getByText(formatExpected(19.99, "USD"))).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(19.99, "USD"))).toBeInTheDocument();
   });
 
   it("renders zero correctly", () => {
     render(<PackagePrice {...defaultProps} basePrice={0} totalPrice={0} />);
 
-    expect(screen.getByText(formatExpected(0, "USD"))).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(0, "USD"))).toBeInTheDocument();
   });
 
   it("renders large prices", () => {
@@ -67,13 +79,13 @@ describe("PackagePrice — normal rendering", () => {
       <PackagePrice {...defaultProps} basePrice={amount} totalPrice={amount} />,
     );
 
-    expect(screen.getByText(formatExpected(amount, "USD"))).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(amount, "USD"))).toBeInTheDocument();
   });
 
   it("renders decimal prices correctly", () => {
     render(<PackagePrice {...defaultProps} basePrice={4.2} totalPrice={4.2} />);
 
-    expect(screen.getByText(formatExpected(4.2, "USD"))).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(4.2, "USD"))).toBeInTheDocument();
   });
 
   it("renders without a custom className", () => {
@@ -103,7 +115,7 @@ describe("PackagePrice — sale behavior", () => {
     );
 
     expect(screen.queryByText("Sale")).not.toBeInTheDocument();
-    expect(screen.getByText(formatExpected(8, "USD"))).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(8, "USD"))).toBeInTheDocument();
   });
 
   it("does not show a sale when basePrice === totalPrice, even with a positive discount", () => {
@@ -132,7 +144,7 @@ describe("PackagePrice — sale behavior", () => {
     );
 
     expect(screen.queryByText("Sale")).not.toBeInTheDocument();
-    expect(screen.getByText(formatExpected(12, "USD"))).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(12, "USD"))).toBeInTheDocument();
   });
 
   it("shows a sale when discount > 0 and totalPrice < basePrice", () => {
@@ -158,8 +170,8 @@ describe("PackagePrice — sale behavior", () => {
       />,
     );
 
-    expect(screen.getByText(formatExpected(10, "USD"))).toBeInTheDocument();
-    expect(screen.getByText(formatExpected(8, "USD"))).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(10, "USD"))).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(8, "USD"))).toBeInTheDocument();
   });
 
   it("visually marks the original price as struck-through", () => {
@@ -172,7 +184,7 @@ describe("PackagePrice — sale behavior", () => {
       />,
     );
 
-    expect(screen.getByText(formatExpected(10, "USD"))).toHaveClass(
+    expect(screen.getByText(priceMatcher(10, "USD"))).toHaveClass(
       "line-through",
     );
   });
@@ -187,7 +199,7 @@ describe("PackagePrice — sale behavior", () => {
       />,
     );
 
-    expect(screen.getByText(formatExpected(8, "USD"))).not.toHaveClass(
+    expect(screen.getByText(priceMatcher(8, "USD"))).not.toHaveClass(
       "line-through",
     );
   });
@@ -209,7 +221,7 @@ describe("PackagePrice — currency handling", () => {
     );
 
     expect(
-      screen.getByText(byNormalizedText(formatExpected(amount, currency))),
+      screen.getByText(priceMatcher(amount, currency)),
     ).toBeInTheDocument();
   });
 
@@ -223,9 +235,7 @@ describe("PackagePrice — currency handling", () => {
       />,
     );
 
-    expect(
-      screen.getByText(byNormalizedText(formatExpected(1000, "JPY"))),
-    ).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(1000, "JPY"))).toBeInTheDocument();
     // JPY has zero minor units — assert that directly via resolvedOptions()
     // rather than pattern-matching the formatted string (a "," can be a
     // thousands separator as easily as a decimal one).
@@ -250,9 +260,7 @@ describe("PackagePrice — currency handling", () => {
     // BHD renders as "BHD 12.345" (a non-breaking space between the
     // code and the amount) — byNormalizedText avoids a spurious mismatch
     // between that and a plain-space matcher string.
-    expect(
-      screen.getByText(byNormalizedText(formatExpected(12.345, "BHD"))),
-    ).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(12.345, "BHD"))).toBeInTheDocument();
   });
 
   it("throws for a currency code that isn't well-formed ISO 4217 (documented limitation)", () => {
@@ -271,7 +279,7 @@ describe("PackagePrice — edge cases", () => {
   it("renders negative values without crashing", () => {
     render(<PackagePrice {...defaultProps} basePrice={-10} totalPrice={-10} />);
 
-    expect(screen.getByText(formatExpected(-10, "USD"))).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(-10, "USD"))).toBeInTheDocument();
   });
 
   it("renders a sale correctly when both prices are negative", () => {
@@ -285,8 +293,8 @@ describe("PackagePrice — edge cases", () => {
     );
 
     expect(screen.getByText("Sale")).toBeInTheDocument();
-    expect(screen.getByText(formatExpected(-5, "USD"))).toBeInTheDocument();
-    expect(screen.getByText(formatExpected(-10, "USD"))).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(-5, "USD"))).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(-10, "USD"))).toBeInTheDocument();
   });
 
   it("handles an extremely large value without crashing", () => {
@@ -295,7 +303,7 @@ describe("PackagePrice — edge cases", () => {
       <PackagePrice {...defaultProps} basePrice={amount} totalPrice={amount} />,
     );
 
-    expect(screen.getByText(formatExpected(amount, "USD"))).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(amount, "USD"))).toBeInTheDocument();
   });
 
   it("rounds fractional values with many decimal places the same way Intl.NumberFormat does", () => {
@@ -304,7 +312,7 @@ describe("PackagePrice — edge cases", () => {
       <PackagePrice {...defaultProps} basePrice={amount} totalPrice={amount} />,
     );
 
-    expect(screen.getByText(formatExpected(amount, "USD"))).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(amount, "USD"))).toBeInTheDocument();
   });
 
   it("handles a basePrice of zero alongside a negative totalPrice", () => {
@@ -318,8 +326,8 @@ describe("PackagePrice — edge cases", () => {
     );
 
     expect(screen.getByText("Sale")).toBeInTheDocument();
-    expect(screen.getByText(formatExpected(0, "USD"))).toBeInTheDocument();
-    expect(screen.getByText(formatExpected(-5, "USD"))).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(0, "USD"))).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(-5, "USD"))).toBeInTheDocument();
   });
 
   it("handles a totalPrice of zero", () => {
@@ -333,7 +341,7 @@ describe("PackagePrice — edge cases", () => {
     );
 
     expect(screen.getByText("Sale")).toBeInTheDocument();
-    expect(screen.getByText(formatExpected(0, "USD"))).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(0, "USD"))).toBeInTheDocument();
   });
 
   it("still renders correctly when discount is far larger than the price itself", () => {
@@ -349,7 +357,7 @@ describe("PackagePrice — edge cases", () => {
     // discount is only ever used as a boolean gate (discount > 0) — its
     // magnitude has no bearing on what's displayed.
     expect(screen.getByText("Sale")).toBeInTheDocument();
-    expect(screen.getByText(formatExpected(5, "USD"))).toBeInTheDocument();
+    expect(screen.getByText(priceMatcher(5, "USD"))).toBeInTheDocument();
   });
 
   it("does not crash on NaN or Infinity price values", () => {
@@ -379,7 +387,7 @@ describe("PackagePrice — edge cases", () => {
     );
 
     expect(screen.getByText("Sale")).toBeInTheDocument();
-    expect(screen.getAllByText(formatExpected(10, "USD"))).toHaveLength(2);
+    expect(screen.getAllByText(priceMatcher(10, "USD"))).toHaveLength(2);
   });
 });
 
@@ -389,7 +397,7 @@ describe("PackagePrice — accessibility", () => {
       <PackagePrice {...defaultProps} basePrice={9.99} totalPrice={9.99} />,
     );
 
-    expect(screen.getByText(formatExpected(9.99, "USD"))).toBeVisible();
+    expect(screen.getByText(priceMatcher(9.99, "USD"))).toBeVisible();
   });
 
   it("keeps both sale prices and the Sale tag visible to assistive technology", () => {
@@ -402,8 +410,8 @@ describe("PackagePrice — accessibility", () => {
       />,
     );
 
-    expect(screen.getByText(formatExpected(10, "USD"))).toBeVisible();
-    expect(screen.getByText(formatExpected(8, "USD"))).toBeVisible();
+    expect(screen.getByText(priceMatcher(10, "USD"))).toBeVisible();
+    expect(screen.getByText(priceMatcher(8, "USD"))).toBeVisible();
     expect(screen.getByText("Sale")).toBeVisible();
   });
 
@@ -417,7 +425,7 @@ describe("PackagePrice — accessibility", () => {
       />,
     );
 
-    const originalPrice = screen.getByText(formatExpected(10, "USD"));
+    const originalPrice = screen.getByText(priceMatcher(10, "USD"));
     expect(originalPrice).not.toHaveAttribute("aria-hidden");
     expect(originalPrice).not.toHaveAttribute("hidden");
   });

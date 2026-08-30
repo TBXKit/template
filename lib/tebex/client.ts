@@ -2,7 +2,12 @@ import createClient from "openapi-fetch";
 import { logger } from "@/lib/logger";
 import type { paths } from "./generated/schema";
 
-const API_BASE = "https://headless.tebex.io/api";
+// The live Tebex Headless API. Overridable via TEBEX_API_BASE only so the
+// end-to-end tests can point every Tebex call at a local fixture server
+// (see test/e2e/) — production deployments leave it unset and hit Tebex.
+const API_BASE =
+  process.env.TEBEX_API_BASE?.replace(/\/$/, "") ??
+  "https://headless.tebex.io/api";
 
 // The public storefront token is safe to expose (see TEBEX_PUBLIC_TOKEN's
 // own docs), but it still identifies this store's account, so debug logs
