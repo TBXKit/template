@@ -1,0 +1,29 @@
+# Local env files — TEBEX_PUBLIC_TOKEN and friends must reach the container
+# as runtime environment variables (docker run -e / --env-file / Compose),
+# never be baked into the build context or image.
+.env*
+!.env.example
+
+.git
+.gitignore
+node_modules
+npm-debug.log*
+
+# Build outputs — regenerated inside the image by `npm run build`.
+.next
+out
+build
+coverage
+
+# Editor/OS noise.
+.vscode
+.idea
+.DS_Store
+
+# Docker files themselves don't need to be in the build context.
+Dockerfile*
+compose.yaml
+docker-compose*
+.dockerignore
+
+README.md

@@ -83,4 +83,39 @@ Tebex's basket-add endpoint appears to reject packages priced unusually high (li
 
 ## Deploying
 
-Any Next.js host works. See the [Next.js deployment docs](https://nextjs.org/docs/app/building-your-application/deploying) — the [Vercel Platform](https://vercel.com/new) is the path of least resistance. Whichever host you use, set `TEBEX_PUBLIC_TOKEN` as an environment variable there too.
+`npm run build` produces two things from one build: the normal `.next` production output, and — because `next.config.ts` sets `output: "standalone"` — a self-contained `.next/standalone` bundle. Neither deployment path below is more "correct" than the other; standalone exists for Docker specifically, it doesn't replace or require changing the normal one.
+
+### Node.js
+
+Any Next.js host works exactly as usual. See the [Next.js deployment docs](https://nextjs.org/docs/app/building-your-application/deploying) — the [Vercel Platform](https://vercel.com/new) is the path of least resistance.
+
+```bash
+npm run build
+npm run start
+```
+
+`next start` reads the normal `.next` output, not `.next/standalone` — it doesn't need it. On this Next.js version it prints a `"next start" does not work with "output: standalone" configuration` warning because `.next/standalone` also happens to exist alongside it; that's expected here and safe to ignore — the app serves normally either way (verified). Whichever host you use, set `TEBEX_PUBLIC_TOKEN` as an environment variable there too.
+
+### Docker
+
+`Dockerfile` is a multi-stage build that uses `.next/standalone` instead — a self-contained server bundle with only the runtime dependencies Next.js actually traced, not the full `node_modules` the build stage used to compile it. It runs as the non-root `node` user.
+
+`app/sitemap.ts` and `app/opengraph-image.tsx` are static routes generated at build time and fetch live Tebex data — the **build** needs `TEBEX_PUBLIC_TOKEN`, not just the running container, the same way `npm run build` does locally. It's passed as a [BuildKit secret](https://docs.docker.com/build/building/secrets/) so it never lands in an image layer; `SITE_URL` gets baked into the generated `sitemap.xml`/`robots.txt` at this same step, so pass the real deployed URL here too, not just at runtime:
+
+```bash
+docker build --secret id=tebex_public_token,env=TEBEX_PUBLIC_TOKEN --build-arg SITE_URL=https://store.example.com -t storefront .
+```
+
+Run it, passing the same variables `.env.example` documents:
+
+```bash
+docker run -p 3000:3000 --env-file .env.local storefront
+```
+
+Or via Compose, which reads the same `.env.local` and sources the build secret from your shell's `TEBEX_PUBLIC_TOKEN`:
+
+```bash
+TEBEX_PUBLIC_TOKEN=... docker compose up --build
+```
+
+There's no database or cache to orchestrate — `compose.yaml` exists purely as a convenience wrapper around the one stateless container, not for multi-service orchestration. Docker is one deployment option among several here, not a requirement.

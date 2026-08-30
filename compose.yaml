@@ -1,0 +1,24 @@
+# One stateless service — this storefront has no database or cache to
+# orchestrate. Kept mainly for local convenience (`docker compose up --build`
+# with env vars sourced from .env.local) rather than for its own sake.
+services:
+  storefront:
+    build:
+      context: .
+      args:
+        # Baked into sitemap.xml/robots.txt at build time — see Dockerfile.
+        SITE_URL: ${SITE_URL:-http://localhost:3000}
+      secrets:
+        - tebex_public_token
+    env_file:
+      # Runtime config: TEBEX_PUBLIC_TOKEN, SITE_URL, DISCORD_URL. Copy
+      # .env.example to .env.local first (see README).
+      - .env.local
+    ports:
+      - "3000:3000"
+
+# Sourced from the host's TEBEX_PUBLIC_TOKEN env var, not a file — matches
+# `docker build --secret id=tebex_public_token,env=TEBEX_PUBLIC_TOKEN`.
+secrets:
+  tebex_public_token:
+    environment: TEBEX_PUBLIC_TOKEN
