@@ -31,6 +31,9 @@ COPY . .
 # it's a plain ARG rather than a mounted one.
 ARG SITE_URL
 ENV SITE_URL=${SITE_URL}
+# Opt into `output: "standalone"` (see next.config.ts) — this is the only
+# build that wants it; the runner stage below copies .next/standalone.
+ENV BUILD_STANDALONE=1
 RUN --mount=type=secret,id=tebex_public_token \
     TEBEX_PUBLIC_TOKEN="$(cat /run/secrets/tebex_public_token)" npm run build
 

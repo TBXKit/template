@@ -112,24 +112,24 @@ Tebex's basket-add endpoint appears to reject packages priced unusually high (li
 
 ## Deploying
 
-`npm run build` produces two things from one build: the normal `.next` production output, and — because `next.config.ts` sets `output: "standalone"` — a self-contained `.next/standalone` bundle. Neither deployment path below is more "correct" than the other; standalone exists for Docker specifically, it doesn't replace or require changing the normal one.
+`npm run build` produces the normal `.next` production output that `next start` and every managed host use. Setting `BUILD_STANDALONE=1` additionally emits a self-contained `.next/standalone` bundle — that's for the Docker image only (the `Dockerfile` sets it), and `next.config.ts` explains why it's opt-in rather than always-on (it breaks Vercel's build).
+
+Required env vars, wherever you deploy: `TEBEX_PUBLIC_TOKEN` (needed at **build** time too — see Docker below), and `SITE_URL` for correct absolute URLs in `sitemap.xml` / `robots.txt` / Open Graph tags. On Vercel `SITE_URL` can be omitted — `lib/site.ts` falls back to `VERCEL_PROJECT_PRODUCTION_URL`.
 
 **Logging.** In production the app logs only recoverable failures (`warn`) and errors — normal traffic produces no log lines, so retained volume tracks problems, not visits. Set `LOG_LEVEL=info` if you want a completed-purchase line as an audit trail, or `LOG_LEVEL=debug` to trace every visitor action while diagnosing something. See [`AGENTS.md`](AGENTS.md) → Logging.
 
 ### Node.js
 
-Any Next.js host works exactly as usual. See the [Next.js deployment docs](https://nextjs.org/docs/app/building-your-application/deploying) — the [Vercel Platform](https://vercel.com/new) is the path of least resistance.
+Node 20.9+ (see `package.json` `engines`; `.nvmrc` pins the dev/CI/Docker version). Any Next.js host works as usual — see the [Next.js deployment docs](https://nextjs.org/docs/app/building-your-application/deploying); the [Vercel Platform](https://vercel.com/new) is the path of least resistance and needs no `next.config.ts` changes.
 
 ```bash
 npm run build
 npm run start
 ```
 
-`next start` reads the normal `.next` output, not `.next/standalone` — it doesn't need it. On this Next.js version it prints a `"next start" does not work with "output: standalone" configuration` warning because `.next/standalone` also happens to exist alongside it; that's expected here and safe to ignore — the app serves normally either way (verified). Whichever host you use, set `TEBEX_PUBLIC_TOKEN` as an environment variable there too.
-
 ### Docker
 
-`Dockerfile` is a multi-stage build that uses `.next/standalone` instead — a self-contained server bundle with only the runtime dependencies Next.js actually traced, not the full `node_modules` the build stage used to compile it. It runs as the non-root `node` user.
+`Dockerfile` is a multi-stage build that sets `BUILD_STANDALONE=1` and copies the resulting `.next/standalone` — a self-contained server bundle with only the runtime dependencies Next.js actually traced, not the full `node_modules` the build stage used to compile it. It runs as the non-root `node` user.
 
 `app/sitemap.ts` and `app/opengraph-image.tsx` are static routes generated at build time and fetch live Tebex data — the **build** needs `TEBEX_PUBLIC_TOKEN`, not just the running container, the same way `npm run build` does locally. It's passed as a [BuildKit secret](https://docs.docker.com/build/building/secrets/) so it never lands in an image layer; `SITE_URL` gets baked into the generated `sitemap.xml`/`robots.txt` at this same step, so pass the real deployed URL here too, not just at runtime:
 

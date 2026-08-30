@@ -374,7 +374,7 @@ No Route Handlers, middleware, or webhook endpoints exist in this app (see Non-N
 
 # Environment & Configuration
 
-- `TEBEX_PUBLIC_TOKEN` (required — every route fetches from Tebex at request/build time and throws if it's unset), `SITE_URL` (optional, defaults to `http://localhost:3000`), `DISCORD_URL` (optional, shown in the footer only when set). Documented in `.env.example`.
+- `TEBEX_PUBLIC_TOKEN` (required — every route fetches from Tebex at request/build time and throws if it's unset), `SITE_URL` (optional — canonical/OG base; `lib/site.ts` falls back to `VERCEL_PROJECT_PRODUCTION_URL`, then `http://localhost:3000`), `DISCORD_URL` (optional, footer only), `LOG_LEVEL` (optional — see Logging). Documented in `.env.example`. `BUILD_STANDALONE=1` is a build-only flag the `Dockerfile` sets to emit `.next/standalone` (see `next.config.ts`); no runtime effect.
 - Biome (`biome.json`) is the linter and formatter — `npm run lint` (`biome check`) and `npm run format` (`biome format --write`). No separate ESLint/Prettier config.
 - `.gitattributes` pins text files to LF. Without it, `npm run lint` fails on a fresh Windows checkout because Biome expects LF but Windows checks out CRLF by default.
 - Each route delegates its presentational markup to a component rather than inlining JSX in `page.tsx` — the page's job is fetching data, resolving not-found cases, and composing components inside the shared `mx-auto max-w-6xl px-6 py-16` wrapper. A non-trivial data transformation that isn't fetching or composing (e.g. JSON-LD construction) lives in a small nearby helper file, not inline in `page.tsx`.
