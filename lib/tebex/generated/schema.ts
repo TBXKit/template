@@ -653,6 +653,16 @@ export interface components {
        * @example 2023-05-25T09:49:37+00:00
        */
       created_at?: string;
+      /**
+       * @description True if the store's platform identifies customers by username.
+       * @example true
+       */
+      supports_usernames?: boolean;
+      /**
+       * @description True if packages can be gifted to another user.
+       * @example false
+       */
+      supports_gifting?: boolean;
     };
     /** @description Wrapped webstore information in a "data" object. */
     WebstoreResponse: {
@@ -825,6 +835,9 @@ export interface components {
     CategoryResponse: {
       data?: components["schemas"]["Category"][];
     };
+    SingleCategoryResponse: {
+      data?: components["schemas"]["Category"];
+    };
     Category: {
       /** @example 2678660 */
       id?: number;
@@ -875,6 +888,9 @@ export interface components {
     };
     PackageResponse: {
       data?: components["schemas"]["Package"][];
+    };
+    SinglePackageResponse: {
+      data?: components["schemas"]["Package"];
     };
     Package: {
       /** @example 6276316 */
@@ -946,6 +962,16 @@ export interface components {
        * @example 2024-05-21T18:09:17+00:00
        */
       updated_at?: string;
+      /**
+       * @description The package's string identifier.
+       * @example pkg_3081120_7088903
+       */
+      ident?: string;
+      /**
+       * @description The package's VIP status. Only `null` has been observed so far, so the non-null type is unconfirmed.
+       * @example null
+       */
+      vip_status?: string | null;
     };
     /** @description A package within an existing basket. */
     BasketPackage: {
@@ -980,6 +1006,11 @@ export interface components {
       type?: "single" | "subscription";
       /** @description An array of payment destination objects describing how the purchase should be split between multiple wallets. **Only available with pre-agreement from Tebex.** */
       revenue_share?: components["schemas"]["RevenueShare"][];
+      /**
+       * @description Whether this package is a recurring (subscription) purchase.
+       * @example false
+       */
+      is_recurring?: boolean;
     };
     RevenueShare: {
       /** @example some_wallet_reference */
@@ -1619,8 +1650,8 @@ export interface operations {
       query?: never;
       header?: never;
       path: {
-        /** @description The basket identifier. */
-        basketIdent: components["parameters"]["basketIdent"];
+        /** @description The ID or slug of the category to fetch. */
+        categoryId: string;
       };
       cookie?: never;
     };
@@ -1632,7 +1663,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["CategoryResponse"];
+          "application/json": components["schemas"]["SingleCategoryResponse"];
         };
       };
     };
@@ -1655,7 +1686,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["CategoryResponse"];
+          "application/json": components["schemas"]["SingleCategoryResponse"];
         };
       };
     };
@@ -1680,7 +1711,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["CategoryResponse"];
+          "application/json": components["schemas"]["SingleCategoryResponse"];
         };
       };
     };
@@ -1703,7 +1734,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["PackageResponse"];
+          "application/json": components["schemas"]["SinglePackageResponse"];
         };
       };
     };
@@ -2058,7 +2089,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["Basket"];
+          "application/json": components["schemas"]["BasketResponse"];
         };
       };
       /** @description The provided request is invalid. The error response will include detail as to which parameter failed validation. */
@@ -2095,7 +2126,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["Basket"];
+          "application/json": components["schemas"]["BasketResponse"];
         };
       };
       /** @description The provided request is invalid. The error response will include detail as to which parameter failed validation. */
@@ -2114,6 +2145,8 @@ export interface operations {
       path: {
         /** @description The basket identifier. */
         basketIdent: components["parameters"]["basketIdent"];
+        /** @description The package identifier */
+        packageId: string;
       };
       cookie?: never;
     };
